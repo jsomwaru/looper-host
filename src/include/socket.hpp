@@ -1,0 +1,52 @@
+#ifndef SOCKET_HPP
+#define SOCKET_HPP
+
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <unistd.h>
+#include <iostream>
+
+using std::ostream; 
+
+struct SocketAddress {
+    SocketAddress() {}
+    SocketAddress(int port) {
+        address_.sin_family = AF_INET;
+        address_.sin_addr.s_addr = INADDR_ANY;
+        address_.sin_port = htons( port );
+    }
+    SocketAddress(const SocketAddress&);
+    inline const int addrlen() { return sizeof(address_); }
+    SocketAddress& operator=(const SocketAddress&);
+    sockaddr_in address_;
+};
+
+class Socket {
+// Only AF_INET Connections  
+public:    
+    Socket(): handle_(-1), opt(1), port_() {}
+    Socket(int);
+    Socket(int, int);
+    ~Socket() { close(handle_); } 
+    Socket& operator=(const int&);
+    
+    int bind_();
+    int listen_();
+    Socket accept_();
+
+    int fd () { return handle_; } 
+
+    friend Socket acceptor(Socket&);
+    friend Socket mksocket(Socket);
+    friend ostream& operator<<(ostream&, const Socket&);
+private:
+    int opt;
+    int handle_;
+    SocketAddress port_;
+};
+
+extern Socket mksocket(int);
+extern Socket acceptor(Socket&);
+extern std::ostream& operator<<(ostream&, const Socket&);
+
+#endif // SOCKET_HPP

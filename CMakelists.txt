@@ -1,0 +1,28 @@
+include(FetchContent)
+
+FetchContent_Declare(json
+  GIT_REPOSITORY https://github.com/ArthurSonzogni/nlohmann_json_cmake_fetchcontent
+  GIT_TAG v3.7.3)
+
+FetchContent_GetProperties(json)
+if(NOT json_POPULATED)
+  FetchContent_Populate(json)
+  add_subdirectory(${json_SOURCE_DIR} ${json_BINARY_DIR} EXCLUDE_FROM_ALL)
+endif()
+
+cmake_minimum_required(VERSION 3.20)
+
+project(looper_host)
+
+set(CMAKE_SOURCE_DIR)
+
+set(CMAKE_CXX_SRANDARD 11)
+
+set(SOURCE_FILES src/main.cpp src/protocol.cpp src/socket.cpp)
+
+include_directories(looper_host PUBLIC src/include)
+
+add_executable(looper_host ${SOURCE_FILES})
+
+target_link_libraries(looper_host PRIVATE nlohmann_json::nlohmann_json)
+

@@ -27,5 +27,5 @@ namespace protocol {
 
     char* readMsg(Socket sock) {
         return readMsg(sock.fd());
-    } 
+    }
 };  

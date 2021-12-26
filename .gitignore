@@ -1,0 +1,6 @@
+_deps/
+Makefile
+looper_host
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake

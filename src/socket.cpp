@@ -16,7 +16,7 @@ Socket::Socket(int handle, int port) {
     handle_ = handle; 
     port_ = SocketAddress(port);
     opt = 1;
-    if (setsockopt(handle_, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
+    if (setsockopt(handle_, SOL_SOCKET, SO_REUSEADDR, &opt, (socklen_t)sizeof(opt))) {
         throw std::runtime_error("Socket failed setsockopt");
     } 
 }

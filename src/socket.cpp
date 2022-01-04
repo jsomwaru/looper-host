@@ -16,7 +16,7 @@ Socket::Socket(int handle, int port) {
     handle_ = handle; 
     port_ = SocketAddress(port);
     opt = 1;
-    if (setsockopt(handle_, SOL_SOCKET, SO_REUSEADDR, &opt, (socklen_t)sizeof(opt))) {
+    if (setsockopt(handle_, SOL_SOCKET, SO_REUSEPORT, &opt, (socklen_t)sizeof(opt))) {
         throw std::runtime_error("Socket failed setsockopt");
     } 
 }
@@ -27,10 +27,17 @@ Socket& Socket::operator=(const int &sockfd) {
     return *this;
 }
 
+
+Socket& Socket::operator=(const Socket &sock) {
+    handle_ = sock.handle_;
+    port_ = sock.port_;
+    return *this;
+}
+
 SocketAddress& SocketAddress::operator=(const SocketAddress& rhs) {
     if (this == &rhs) 
         return *this;
-    this->address_ = rhs.address_;
+    memcpy(&this->address_,  &rhs.address_, sizeof(rhs.address_));
     return *this;
 }
 
@@ -48,15 +55,20 @@ int Socket::listen_() {
 
 Socket Socket::accept_() {
     Socket tmp;
-    int len = port_.addrlen();
+    int len = tmp.port_.addrlen();
     // tmp.port_.address_
-    int fd = accept(handle_, (sockaddr*)&port_.address_, (socklen_t*)&len);
+    int fd = accept(handle_, (sockaddr*)&tmp.port_.address_, (socklen_t*)&len);
+    if (fd < 0)
+        throw std::runtime_error("accept unsucessful");
+    std::cerr << "socket addr after\n";
+    port_.print();
     tmp.handle_ = fd;
     return tmp;
 }
 
-ssize_t Socket::send_(const std::string &msg) { 
-    return send(handle_, msg.c_str(), msg.length(), 0);
+ssize_t Socket::send_(const std::string &msg) {
+    std::cout << "sending on "<< handle_ << std::endl;
+    return write(handle_, msg.c_str(), msg.length());
 }
 
 Socket acceptor(Socket &sock) {
@@ -74,5 +86,6 @@ Socket mksocket(int port) {
 }
 
 ostream& operator<<(ostream &os, const Socket &sock) {
+    sock.port_.print();
     return os << sock.handle_ << std::endl;
 } 

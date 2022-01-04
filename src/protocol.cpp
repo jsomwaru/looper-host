@@ -33,7 +33,7 @@ namespace protocol {
                 buf = (char*)realloc(buf, chunk_sz*sizeof(char));
                 cap += chunk_sz;
             }
-            readn = read(fd, buf, chunk_sz);
+            readn = recv(fd, buf, chunk_sz, 0);
             len += readn;
         } while(readn == chunk_sz);
         if(len == cap) {

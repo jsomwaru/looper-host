@@ -19,7 +19,7 @@ int main (int argc, char **argv) {
     startmsg(port);
     while (true) {
         Socket fd = acceptor(sock);
-        std::cout << fd;
+        std::cerr << fd;
         char *raw = protocol::readMsg(fd);
         if(!protocol::upgrade_connection(fd, raw)) {
             std::cout << "upgraded";

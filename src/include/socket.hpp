@@ -15,8 +15,9 @@ struct SocketAddress {
         address_.sin_family = AF_INET;
         address_.sin_addr.s_addr = INADDR_ANY;
         address_.sin_port = htons( port );
+        this->print();
     }
-    void print() {
+    void print() const {
          printf("New connection  ip is : %s , port : %d\n" , inet_ntoa(address_.sin_addr) , ntohs(address_.sin_port));
     }
     SocketAddress(const SocketAddress&);
@@ -33,6 +34,7 @@ public:
     Socket(int, int);
     ~Socket() { close(handle_); } 
     Socket& operator=(const int&);
+    Socket& operator=(const Socket&);
     
     int bind_();
     int listen_();

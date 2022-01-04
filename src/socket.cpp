@@ -48,10 +48,15 @@ int Socket::listen_() {
 
 Socket Socket::accept_() {
     Socket tmp;
-    int len = tmp.port_.addrlen();
-    int fd = accept(handle_, (sockaddr*)&tmp.port_.address_, (socklen_t*)&len);
+    int len = port_.addrlen();
+    // tmp.port_.address_
+    int fd = accept(handle_, (sockaddr*)&port_.address_, (socklen_t*)&len);
     tmp.handle_ = fd;
     return tmp;
+}
+
+ssize_t Socket::send_(const std::string &msg) { 
+    return send(handle_, msg.c_str(), msg.length(), 0);
 }
 
 Socket acceptor(Socket &sock) {
@@ -59,7 +64,9 @@ Socket acceptor(Socket &sock) {
 }
 
 Socket mksocket(int port) {
-    int fd = socket(AF_INET, SOCK_STREAM, 0);
+    int fd;
+    if ((fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) 
+        throw std::runtime_error("mksocket failed to create socket");
     Socket tmp(fd, port);
     tmp.bind_();
     tmp.listen_();

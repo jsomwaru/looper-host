@@ -4,6 +4,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <unistd.h>
+#include <arpa/inet.h>
 #include <iostream>
 
 using std::ostream; 
@@ -14,6 +15,9 @@ struct SocketAddress {
         address_.sin_family = AF_INET;
         address_.sin_addr.s_addr = INADDR_ANY;
         address_.sin_port = htons( port );
+    }
+    void print() {
+         printf("New connection  ip is : %s , port : %d\n" , inet_ntoa(address_.sin_addr) , ntohs(address_.sin_port));
     }
     SocketAddress(const SocketAddress&);
     inline const int addrlen() { return sizeof(address_); }
@@ -33,6 +37,7 @@ public:
     int bind_();
     int listen_();
     Socket accept_();
+    ssize_t send_(const std::string&);
 
     int fd () { return handle_; } 
 

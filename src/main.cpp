@@ -11,6 +11,7 @@ void startmsg(int port) {
     std::cout << "Listening on " << port << std::endl;
 }
 
+//#define print(msg) std::cout << msg << std::endl;
 
 int main (int argc, char **argv) {
     int port = DEFAULT_PORT;
@@ -18,8 +19,11 @@ int main (int argc, char **argv) {
     startmsg(port);
     while (true) {
         Socket fd = acceptor(sock);
-        char *raw = protocol::readMsg(fd);        
-        auto data = json::parse(raw);
-        std::cout << data << std::endl;
-    } 
-}   
+        std::cout << fd;
+        char *raw = protocol::readMsg(fd);
+        if(!protocol::upgrade_connection(fd, raw)) {
+            std::cout << "upgraded";
+        }
+    }
+    return 0;
+}

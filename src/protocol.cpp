@@ -33,7 +33,7 @@ namespace protocol {
                 buf = (char*)realloc(buf, chunk_sz*sizeof(char));
                 cap += chunk_sz;
             }
-            readn = recv(fd, buf, chunk_sz, 0);
+            readn = recv(fd, buf, sizeof(buf), 0);
             len += readn;
         } while(readn == chunk_sz);
         if(len == cap) {
@@ -43,13 +43,13 @@ namespace protocol {
         return buf;
     }
 
-    char* readMsg(Socket sock) {
+    char* readMsg(const Socket &sock) {
         return readMsg(sock.fd());
     }
 
     headerdict parse_headers(char*);
 
-    int upgrade_connection(Socket sock, char *headers) {
+    int upgrade_connection(Socket &sock, char *headers) {
         headerdict parsed_headers = protocol::parse_headers(headers);
         std::string sentkey(parsed_headers["Sec-WebSocket-Key"]);
         std::string acceptkey = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
@@ -58,8 +58,6 @@ namespace protocol {
                                 "Upgrade: websocket\r\n" 
                                 "Connection: Upgrade\r\n";
         upgrade.append("Sec-WebSocket-Accept: " + socketkey + "\r\n\r\n");
-        std::cerr << upgrade << '\n';
-        printdict(parsed_headers);
         auto tmp = sock.send_(upgrade);
         std::cerr << "Sent " << tmp << '\n';
         return tmp;

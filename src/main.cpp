@@ -24,6 +24,9 @@ int main (int argc, char **argv) {
         if(!protocol::upgrade_connection(fd, raw)) {
             std::cout << "upgraded";
         }
+        else {
+            std::cerr << strerror(errno) << '\n';
+        }
     }
     return 0;
 }

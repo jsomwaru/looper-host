@@ -1,5 +1,7 @@
 #include "socket.hpp"
 #include <stdexcept>
+#include <cstring>
+#include <utility>
 
 Socket::Socket(int handle) {
     if(handle<=0) {
@@ -16,9 +18,14 @@ Socket::Socket(int handle, int port) {
     handle_ = handle; 
     port_ = SocketAddress(port);
     opt = 1;
-    if (setsockopt(handle_, SOL_SOCKET, SO_REUSEPORT, &opt, (socklen_t)sizeof(opt))) {
+    if (setsockopt(handle_, SOL_SOCKET, SO_REUSEPORT | SO_REUSEADDR, &opt, (socklen_t)sizeof(opt))) {
         throw std::runtime_error("Socket failed setsockopt");
     } 
+}
+
+Socket::Socket(Socket&& rhs) {
+    handle_ = std::exchange(rhs.handle_, 0);
+    port_   = std::move(rhs.port_);
 }
 
 Socket& Socket::operator=(const int &sockfd) {
@@ -60,15 +67,14 @@ Socket Socket::accept_() {
     int fd = accept(handle_, (sockaddr*)&tmp.port_.address_, (socklen_t*)&len);
     if (fd < 0)
         throw std::runtime_error("accept unsucessful");
-    std::cerr << "socket addr after\n";
-    port_.print();
     tmp.handle_ = fd;
     return tmp;
 }
 
 ssize_t Socket::send_(const std::string &msg) {
     std::cout << "sending on "<< handle_ << std::endl;
-    return write(handle_, msg.c_str(), msg.length());
+    std::cout << "msg " <<  msg.c_str() << std::endl;
+    return send(handle_, msg.c_str(), msg.length(), 0);
 }
 
 Socket acceptor(Socket &sock) {
@@ -77,7 +83,7 @@ Socket acceptor(Socket &sock) {
 
 Socket mksocket(int port) {
     int fd;
-    if ((fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) 
+    if ((fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) 
         throw std::runtime_error("mksocket failed to create socket");
     Socket tmp(fd, port);
     tmp.bind_();

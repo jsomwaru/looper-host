@@ -13,7 +13,7 @@ struct SocketAddress {
     SocketAddress() {}
     SocketAddress(int port) {
         address_.sin_family = AF_INET;
-        address_.sin_addr.s_addr = INADDR_ANY;
+        address_.sin_addr.s_addr = htonl(INADDR_ANY);
         address_.sin_port = htons( port );
         this->print();
     }
@@ -32,7 +32,8 @@ public:
     Socket(): handle_(-1), opt(1), port_() {}
     Socket(int);
     Socket(int, int);
-    ~Socket() { close(handle_); } 
+    Socket(Socket&&);
+    ~Socket() { std::cout << "Close " << handle_ << '\n'; close(handle_); } 
     Socket& operator=(const int&);
     Socket& operator=(const Socket&);
     
@@ -41,7 +42,7 @@ public:
     Socket accept_();
     ssize_t send_(const std::string&);
 
-    int fd () { return handle_; } 
+    int fd() const { return handle_; } 
 
     friend Socket acceptor(Socket&);
     friend Socket mksocket(Socket);

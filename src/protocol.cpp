@@ -1,11 +1,10 @@
 #include <cryptlite/sha1.h>
 #include "protocol.hpp"
-#include <unordered_map>
 #include <utility>
 #include <algorithm>
+#include <nlohmann/json.hpp>
 
-typedef std::unordered_map<std::string,std::string> headerdict;
-
+using namespace nlohmann;
 
 void printdict(const headerdict &dict) {
     for (const auto &pair: dict ) {
@@ -22,7 +21,7 @@ std::string rtrim(std::string &s) {
 
 namespace protocol {
 
-    char* readMsg(int fd) {
+    std::string readMsg(int fd) {
         int chunk_sz = 2048;
         int len = 0;
         int cap = chunk_sz; 
@@ -33,23 +32,22 @@ namespace protocol {
                 buf = (char*)realloc(buf, chunk_sz*sizeof(char));
                 cap += chunk_sz;
             }
-            readn = recv(fd, buf, sizeof(buf), 0);
+            readn = read(fd, buf, chunk_sz);
             len += readn;
         } while(readn == chunk_sz);
         if(len == cap) {
            buf = (char*)realloc(buf, sizeof(char));
         }
         buf[len] = '\0';
-        return buf;
+        std::string newbuf(buf);
+        return newbuf;
     }
 
-    char* readMsg(const Socket &sock) {
+    std::string readMsg(const Socket &sock) {
         return readMsg(sock.fd());
     }
 
-    headerdict parse_headers(char*);
-
-    int upgrade_connection(Socket &sock, char *headers) {
+    int upgrade_connection(Socket &sock, std::string &headers) {
         headerdict parsed_headers = protocol::parse_headers(headers);
         std::string sentkey(parsed_headers["Sec-WebSocket-Key"]);
         std::string acceptkey = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
@@ -59,13 +57,19 @@ namespace protocol {
                                 "Connection: Upgrade\r\n";
         upgrade.append("Sec-WebSocket-Accept: " + socketkey + "\r\n\r\n");
         auto tmp = sock.send_(upgrade);
-        std::cerr << "Sent " << tmp << '\n';
         return tmp;
     }
 
-    headerdict parse_headers(char *rawheaders) {
-        std::string data(rawheaders);
-        std::istringstream iss(data);
+    int json_handler(const json& req) {
+        std::string type = req["type"].get<std::string>();
+        if (type == "new") {
+            std::cout << "New track recieved";
+        }
+        return 0;
+    }
+
+    headerdict parse_headers(std::string &rawheaders) {
+        std::istringstream iss(rawheaders);
         std::string line;
         headerdict headers;
         while(getline(iss, line)) {
@@ -80,8 +84,9 @@ namespace protocol {
         } 
         return headers;
     }
-
-    std::string testhash(std::string tmp) {
-        return cryptlite::sha1::hash_hex(tmp);
+    
+    json parse_json(std::string& blob) {
+        json j = json::parse(blob);
+        return j;
     }
-};
+}

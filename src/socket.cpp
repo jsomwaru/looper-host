@@ -18,14 +18,20 @@ Socket::Socket(int handle, int port) {
     handle_ = handle; 
     port_ = SocketAddress(port);
     opt = 1;
-    if (setsockopt(handle_, SOL_SOCKET, SO_REUSEPORT | SO_REUSEADDR, &opt, (socklen_t)sizeof(opt))) {
+    if (setsockopt(handle_, SOL_SOCKET, SO_REUSEADDR, &opt, (socklen_t)sizeof(opt))) {
         throw std::runtime_error("Socket failed setsockopt");
     } 
 }
 
 Socket::Socket(Socket&& rhs) {
-    handle_ = std::exchange(rhs.handle_, 0);
+    handle_ = rhs.handle_;
+    rhs.handle_ = 0;
     port_   = std::move(rhs.port_);
+}
+
+Socket::Socket(const Socket& sock) {
+    handle_ = sock.handle_;
+    port_ = sock.port_;
 }
 
 Socket& Socket::operator=(const int &sockfd) {

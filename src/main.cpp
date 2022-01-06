@@ -1,7 +1,9 @@
 #include "socket.hpp"
 #include "protocol.hpp"
+#include "client_handler.hpp"
 #include <iostream>
 #include <nlohmann/json.hpp>
+#include <thread>
 
 #define DEFAULT_PORT 9600
 
@@ -16,13 +18,13 @@ void startmsg(int port) {
 int main (int argc, char **argv) {
     int port = DEFAULT_PORT;
     Socket sock = mksocket(port); 
+    std::vector<std::thread> thread_manager;
     startmsg(port);
     while (true) {
         Socket fd = acceptor(sock);
-        std::cerr << fd;
-        char *raw = protocol::readMsg(fd);
+        std::string raw = protocol::readMsg(fd);
         if(!protocol::upgrade_connection(fd, raw)) {
-            std::cout << "upgraded";
+            thread_manager.emplace_back(client::client_handler, std::ref(fd));
         }
         else {
             std::cerr << strerror(errno) << '\n';

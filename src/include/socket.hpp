@@ -29,9 +29,10 @@ struct SocketAddress {
 class Socket {
 // Only AF_INET Connections  
 public:    
-    Socket(): handle_(-1), opt(1), port_() {}
+    Socket(): opt(1), handle_(-1), port_() {}
     Socket(int);
     Socket(int, int);
+    Socket(const Socket&);
     Socket(Socket&&);
     ~Socket() { std::cout << "Close " << handle_ << '\n'; close(handle_); } 
     Socket& operator=(const int&);

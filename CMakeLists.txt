@@ -27,15 +27,15 @@ project(looper_host)
 
 set(CMAKE_SOURCE_DIR)
 
-set(CMAKE_CXX_SRANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(CMAKE_CSS_FLAGS "-Wall")
+set(CMAKE_CXX_FLAGS "-Wall  -std=c++14 -stdlib=libc++")
 
-set(CMAKE_CSS_FLAGS_DEBUG "-g")
+set(CMAKE_CXX_FLAGS_DEBUG "-g")
 
-set(CMAKE_CSS_FLAGS_RELEASE "-O2")
+set(CMAKE_CXX_FLAGS_RELEASE "-O2")
 
-set(SOURCE_FILES src/main.cpp src/protocol.cpp src/socket.cpp)
+set(SOURCE_FILES src/main.cpp src/protocol.cpp src/socket.cpp src/client_handler.cpp)
 
 include_directories(looper_host PUBLIC src/include)
 

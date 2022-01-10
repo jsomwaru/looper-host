@@ -5,5 +5,5 @@
 using json = nlohmann::json;
 
 namespace client {
-    int client_handler(Socket&);
+    int client_handler(Socket);
 };

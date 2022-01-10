@@ -23,11 +23,13 @@ int main (int argc, char **argv) {
     while (true) {
         Socket fd = acceptor(sock);
         std::string raw = protocol::readMsg(fd);
-        if(!protocol::upgrade_connection(fd, raw)) {
-            thread_manager.emplace_back(client::client_handler, std::ref(fd));
+        if(protocol::upgrade_connection(fd, raw) > 0) {
+            std::thread t(client::client_handler, fd);
+            thread_manager.push_back(std::move(t));
         }
         else {
-            std::cerr << strerror(errno) << '\n';
+           // std::cerr << strerror(0) << '\n';
+           continue;
         }
     }
     return 0;

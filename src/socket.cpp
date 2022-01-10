@@ -25,7 +25,7 @@ Socket::Socket(int handle, int port) {
 
 Socket::Socket(Socket&& rhs) {
     handle_ = rhs.handle_;
-    rhs.handle_ = 0;
+    rhs.handle_ = -1;
     port_   = std::move(rhs.port_);
 }
 
@@ -78,8 +78,6 @@ Socket Socket::accept_() {
 }
 
 ssize_t Socket::send_(const std::string &msg) {
-    std::cout << "sending on "<< handle_ << std::endl;
-    std::cout << "msg " <<  msg.c_str() << std::endl;
     return send(handle_, msg.c_str(), msg.length(), 0);
 }
 
@@ -99,5 +97,5 @@ Socket mksocket(int port) {
 
 ostream& operator<<(ostream &os, const Socket &sock) {
     sock.port_.print();
-    return os << sock.handle_ << std::endl;
+    return os << sock.handle_ << ' ' << &sock.port_  << std::endl;
 } 

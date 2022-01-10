@@ -40,6 +40,7 @@ namespace protocol {
         }
         buf[len] = '\0';
         std::string newbuf(buf);
+        delete [] buf;
         return newbuf;
     }
 

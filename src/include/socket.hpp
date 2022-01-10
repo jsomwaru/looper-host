@@ -15,7 +15,6 @@ struct SocketAddress {
         address_.sin_family = AF_INET;
         address_.sin_addr.s_addr = htonl(INADDR_ANY);
         address_.sin_port = htons( port );
-        this->print();
     }
     void print() const {
          printf("New connection  ip is : %s , port : %d\n" , inet_ntoa(address_.sin_addr) , ntohs(address_.sin_port));
@@ -34,7 +33,7 @@ public:
     Socket(int, int);
     Socket(const Socket&);
     Socket(Socket&&);
-    ~Socket() { std::cout << "Close " << handle_ << '\n'; close(handle_); } 
+    ~Socket() { } 
     Socket& operator=(const int&);
     Socket& operator=(const Socket&);
     
@@ -44,6 +43,7 @@ public:
     ssize_t send_(const std::string&);
 
     int fd() const { return handle_; } 
+    void close_ () { close(handle_); }
 
     friend Socket acceptor(Socket&);
     friend Socket mksocket(Socket);

@@ -20,7 +20,7 @@ std::string rtrim(std::string &s) {
 
 
 namespace protocol {
-
+    
     std::string readMsg(int fd) {
         int chunk_sz = 2048;
         int len = 0;

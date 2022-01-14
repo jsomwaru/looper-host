@@ -33,7 +33,7 @@ public:
     Socket(int, int);
     Socket(const Socket&);
     Socket(Socket&&);
-    ~Socket() { } 
+    ~Socket() { std::cerr << "Closed " << handle_ << '\n';} 
     Socket& operator=(const int&);
     Socket& operator=(const Socket&);
     
@@ -44,6 +44,8 @@ public:
 
     int fd() const { return handle_; } 
     void close_ () { close(handle_); }
+
+    inline char* client_ip() const { return inet_ntoa(port_.address_.sin_addr); }
 
     friend Socket acceptor(Socket&);
     friend Socket mksocket(Socket);

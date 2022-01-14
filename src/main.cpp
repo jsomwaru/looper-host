@@ -18,18 +18,15 @@ void startmsg(int port) {
 int main (int argc, char **argv) {
     int port = DEFAULT_PORT;
     Socket sock = mksocket(port); 
-    std::vector<std::thread> thread_manager;
-    startmsg(port);
+    std::vector<std::unique_ptr<std::thread>> thread_manager;
+    startmsg(port);    
     while (true) {
         Socket fd = acceptor(sock);
-        std::string raw = protocol::readMsg(fd);
-        if(protocol::upgrade_connection(fd, raw) > 0) {
-            std::thread t(client::client_handler, fd);
-            thread_manager.push_back(std::move(t));
-        }
-        else {
-           // std::cerr << strerror(0) << '\n';
-           continue;
+        thread_manager.emplace_back(new std::thread(client::client_handler, fd));
+        if (thread_manager.size() > 10) {
+            for (auto &i: thread_manager) {
+                i->join();
+            }
         }
     }
     return 0;

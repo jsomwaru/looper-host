@@ -33,7 +33,7 @@ public:
     Socket(int, int);
     Socket(const Socket&);
     Socket(Socket&&);
-    ~Socket() { std::cerr << "Closed " << handle_ << '\n';} 
+    ~Socket() { } 
     Socket& operator=(const int&);
     Socket& operator=(const Socket&);
     

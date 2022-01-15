@@ -18,6 +18,13 @@ std::string rtrim(std::string &s) {
 	return (end == std::string::npos) ? "" : s.substr(0, end + 1);
 }
 
+void debug_msg(const std::string &msg) {
+    std::cerr << msg 
+        << " Length "
+        << msg.size()
+        << '\n';
+}
+
 
 namespace protocol {
     
@@ -32,7 +39,7 @@ namespace protocol {
                 buf = (char*)realloc(buf, chunk_sz*sizeof(char));
                 cap += chunk_sz;
             }
-            readn = read(fd, buf, chunk_sz);
+            readn = read(fd, buf+len, chunk_sz);
             len += readn;
         } while(readn == chunk_sz);
         if(len == cap) {
@@ -40,6 +47,7 @@ namespace protocol {
         }
         buf[len] = '\0';
         std::string newbuf(buf);
+        debug_msg(newbuf);
         delete [] buf;
         return newbuf;
     }
@@ -61,14 +69,6 @@ namespace protocol {
         return tmp;
     }
 
-    int json_handler(const json& req) {
-        std::string type = req["type"].get<std::string>();
-        if (type == "new") {
-            std::cout << "New track recieved";
-        }
-        return 0;
-    }
-
     headerdict parse_headers(std::string &rawheaders) {
         std::istringstream iss(rawheaders);
         std::string line;
@@ -85,9 +85,28 @@ namespace protocol {
         } 
         return headers;
     }
-    
-    json parse_json(std::string& blob) {
-        json j = json::parse(blob);
-        return j;
+
+    std::string decode_frame(std::string &raw) {
+        const uint8_t *data = reinterpret_cast<const uint8_t*>(raw.c_str());
+        uint8_t mask = 0x80;
+        uint8_t optmask = 0x0f;
+        uint8_t FIN = ((data[0] & mask) >> 7);
+        uint8_t OPT = (data[0] & optmask);
+        uint8_t MASKBIT = ((data[1] & mask) >> 7);
+        uint8_t length = (((data[1] << 1 ) & 0xff ) >> 1);
+        uint8_t MASK[4];
+        uint8_t encoded[length];
+        uint8_t decoded[length];     
+        std::copy(&data[2], &data[5], MASK);
+        std::copy(&data[6], &data[raw.length()], encoded); 
+        for (int i = 0; i < length; ++i) {
+            decoded[i] = encoded[i] ^ MASK[i % 4];
+        }
+        std::string decodeddata((char*)decoded);
+        std::cout << "Decoded data " << decodeddata.length() << ' ' << decodeddata << std::endl;
+        std::cout << "OPT " << unsigned(OPT) << std::endl;
+        std::cout <<  unsigned(length) << std::endl;
+        std::cout << "MASK better be 1 " << unsigned(MASKBIT) << std::endl;
+        return decodeddata;
     }
-}
+};

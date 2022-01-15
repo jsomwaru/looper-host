@@ -13,8 +13,6 @@ void startmsg(int port) {
     std::cout << "Listening on " << port << std::endl;
 }
 
-//#define print(msg) std::cout << msg << std::endl;
-
 int main (int argc, char **argv) {
     int port = DEFAULT_PORT;
     Socket sock = mksocket(port); 
@@ -26,6 +24,7 @@ int main (int argc, char **argv) {
         if (thread_manager.size() > 10) {
             for (auto &i: thread_manager) {
                 i->join();
+                i.reset();
             }
         }
     }

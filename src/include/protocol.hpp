@@ -15,8 +15,7 @@ namespace protocol {
     std::string readMsg(const Socket&);
     headerdict parse_headers(std::string&);
     int upgrade_connection(Socket&, std::string&);
-    json parse_json(std::string&);
-    int json_handler(const json&);
+    std::string decode_frame(std::string&);
 };
 
 #endif

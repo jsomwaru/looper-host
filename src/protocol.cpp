@@ -1,10 +1,14 @@
 #include <cryptlite/sha1.h>
+#include <cryptlite/base64.h>
 #include "protocol.hpp"
 #include <utility>
 #include <algorithm>
 #include <nlohmann/json.hpp>
 
 using namespace nlohmann;
+
+using namespace cryptlite;
+
 
 void printdict(const headerdict &dict) {
     for (const auto &pair: dict ) {
@@ -93,20 +97,33 @@ namespace protocol {
         uint8_t FIN = ((data[0] & mask) >> 7);
         uint8_t OPT = (data[0] & optmask);
         uint8_t MASKBIT = ((data[1] & mask) >> 7);
-        uint8_t length = (((data[1] << 1 ) & 0xff ) >> 1);
+        uint8_t length = (data[1] & 127);
         uint8_t MASK[4];
         uint8_t encoded[length];
-        uint8_t decoded[length];     
-        std::copy(&data[2], &data[5], MASK);
+        uint8_t decoded[length+1];    
+        std::copy(&data[2], &data[6], MASK);
         std::copy(&data[6], &data[raw.length()], encoded); 
         for (int i = 0; i < length; ++i) {
-            decoded[i] = encoded[i] ^ MASK[i % 4];
+            decoded[i] = (encoded[i] ^ MASK[i % 4]);
         }
+        decoded[length] = '\0';
         std::string decodeddata((char*)decoded);
-        std::cout << "Decoded data " << decodeddata.length() << ' ' << decodeddata << std::endl;
-        std::cout << "OPT " << unsigned(OPT) << std::endl;
-        std::cout <<  unsigned(length) << std::endl;
-        std::cout << "MASK better be 1 " << unsigned(MASKBIT) << std::endl;
         return decodeddata;
+    }
+
+    std::string encode_frame(const std::string &raw) {
+        std::string frame;
+        uint8_t payload_length(raw.length());
+        char headers[2] = {0};
+        //fin
+        headers[0] |= 0xf;
+        //opcode
+        headers[0] |= 0x2;
+        //mask
+        headers[0] |= 0x1;
+        headers[1] = (payload_length << 1);
+        std::copy(headers, headers+2, frame);
+        std::copy(raw, raw.length(), frame);
+        return frame;
     }
 };

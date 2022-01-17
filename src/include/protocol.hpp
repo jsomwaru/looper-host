@@ -16,6 +16,7 @@ namespace protocol {
     headerdict parse_headers(std::string&);
     int upgrade_connection(Socket&, std::string&);
     std::string decode_frame(std::string&);
+    std::string encode_frame(const std::string&);
 };
 
 #endif

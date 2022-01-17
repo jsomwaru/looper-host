@@ -4,7 +4,10 @@ a_socket = socket.socket()
 
 try:
     a_socket.connect(("127.0.0.1", 9600))
-    payload = "hi" * 2048
-    a_socket.send(payload.encode())
+    #upgrade
+    payload = "Sec-WebSocket-Key: ABASDSF"
+    #a_socket.send(payload.encode())
+    me = "jacob" * 554
+    a_socket.send(me.encode())
 except:
     print("Connection failed")

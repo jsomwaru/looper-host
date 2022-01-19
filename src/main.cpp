@@ -22,7 +22,6 @@ int main (int argc, char **argv) {
         Socket fd = acceptor(sock);
         auto buffer  = client::client_handler(fd);
         thread_manager.emplace_back(new std::thread(looper_main, std::move(buffer));    
-        }
         if (thread_manager.size() > 5) {
             for (auto &i: thread_manager) {
                 i->join();

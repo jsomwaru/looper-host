@@ -19,7 +19,6 @@
 
 using json = nlohmann::json;
 
-jack_port_t *output_port1, *output_port2;
 jack_client_t *client;
 
 #ifndef M_PI
@@ -27,13 +26,6 @@ jack_client_t *client;
 #endif
 
 #define TABLE_SIZE   (200)
-typedef struct
-{
-	float sine[TABLE_SIZE];
-	int left_phase;
-	int right_phase;
-}
-paTestData;
 
 static void signal_handler(int sig)
 {
@@ -61,49 +53,22 @@ int process_file(jack_nframes_t nframes, void * arg) {
 	
 }
 
-int
-process (jack_nframes_t nframes, void *arg)
-{
-	jack_default_audio_sample_t *out1, *out2;
-	paTestData *data = (paTestData*)arg;
-	int i;
-
-	out1 = (jack_default_audio_sample_t*)jack_port_get_buffer (output_port1, nframes);
-	out2 = (jack_default_audio_sample_t*)jack_port_get_buffer (output_port2, nframes);
-
-	for( i=0; i<nframes; i++ )
-	{
-		out1[i] = data->sine[data->left_phase];  /* left */
-		out2[i] = data->sine[data->right_phase];  /* right */
-		data->left_phase += 1;
-		if( data->left_phase >= TABLE_SIZE ) data->left_phase -= TABLE_SIZE;
-		data->right_phase += 3; /* higher pitch so we can distinguish left and right. */
-		if( data->right_phase >= TABLE_SIZE ) data->right_phase -= TABLE_SIZE;
-	}
-    
-	return 0;      
-}
-
 /**
  * JACK calls this shutdown_callback if the server ever shuts down or
  * decides to disconnect the client.
  */
-void
-jack_shutdown (void *arg)
-{
+void jack_shutdown (void *arg) {
 	exit (1);
 }
 
-int
-looper_main (json buffer)
-{
+int looper_main (json buffer) {
 	const char **ports;
 	const char *client_name = "looper";
 	const char *server_name = NULL;
 	jack_options_t options = JackNullOption;
 	jack_status_t status;
-
-	int i;
+    auto *left = buffer.get<uint8_t>("left");
+    auto *right = buffer.get<uint8_t>("right");
 
 	/* open a client connection to the JACK server */
 
@@ -137,34 +102,22 @@ looper_main (json buffer)
 
 	jack_on_shutdown (client, jack_shutdown, 0);
 
-	if (file.channels() > 2) {
-		fprintf (stderr, "unsupported number of channels");
-		exit (1);
-	}
 	/* create two ports */
-    jack_port_t **output_ports;
-	output_ports = (jack_port_t**)malloc((file.channels() * sizeof(jack_port_t*)));
-	for(int i = 0; i < file.channels(); ++i) {
+    vector<jack_port_t*> output_ports(2);
+	for(int i = 0; i < output_ports.size(); ++i) {
 		// looper_out_
 		char name[13];
 		sprintf(name, "looper_out_%d", (i+1));
-		output_ports[i] = jack_port_register (client, name,
+		auto *tmp_port = jack_port_register (client, name,
 					  JACK_DEFAULT_AUDIO_TYPE,
 					  JackPortIsOutput, 0);
-	}
+        if(tmp_port == NULL) {
+            fprint(stderr, "output port not available");
+            exit(1);
+        }
+        output_ports[i] = tmp_port;
+    }
 
-	output_port1 = jack_port_register (client, "output1",
-					  JACK_DEFAULT_AUDIO_TYPE,
-					  JackPortIsOutput, 0);
-
-	output_port2 = jack_port_register (client, "output2",
-					  JACK_DEFAULT_AUDIO_TYPE,
-					  JackPortIsOutput, 0);
-
-	if ((output_port1 == NULL) || (output_port2 == NULL)) {
-		fprintf(stderr, "no more JACK ports available\n");
-		exit (1);
-	}
 
 	/* Tell the JACK server that we are ready to roll.  Our
 	 * process() callback will start running now. */
@@ -188,14 +141,11 @@ looper_main (json buffer)
 		fprintf(stderr, "no physical playback ports\n");
 		exit (1);
 	}
-
-	if (jack_connect (client, jack_port_name (output_port1), ports[0])) {
-		fprintf (stderr, "cannot connect output ports\n");
-	}
-
-	if (jack_connect (client, jack_port_name (output_port2), ports[1])) {
-		fprintf (stderr, "cannot connect output ports\n");
-	}
+    for (int i =  0; i < output_ports.size(); ++i) {
+	    if (jack_connect(client, jack_port_name(output_ports[i]), ports[i])) {
+		    fprintf (stderr, "cannot connect output ports\n");
+	    }
+    }
 
 	jack_free (ports);
     

@@ -35,7 +35,7 @@ set(CMAKE_CXX_FLAGS_DEBUG "-g")
 
 set(CMAKE_CXX_FLAGS_RELEASE "-O2")
 
-set(SOURCE_FILES src/main.cpp src/protocol.cpp src/socket.cpp src/client_handler.cpp)
+set(SOURCE_FILES src/main.cpp src/protocol.cpp src/socket.cpp src/client_handler.cpp src/looper.cpp)
 
 include_directories(looper_host PUBLIC src/include)
 

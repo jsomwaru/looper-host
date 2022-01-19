@@ -1,12 +1,12 @@
 #include "socket.hpp"
 #include "protocol.hpp"
 #include "client_handler.hpp"
+#include "looper.cpp"
 #include <iostream>
 #include <nlohmann/json.hpp>
 #include <thread>
 
 #define DEFAULT_PORT 9600
-
 using json = nlohmann::json;
 
 void startmsg(int port) {
@@ -20,12 +20,14 @@ int main (int argc, char **argv) {
     startmsg(port);    
     while (true) {
         Socket fd = acceptor(sock);
-        thread_manager.emplace_back(new std::thread(client::client_handler, fd));
-        if (thread_manager.size() > 10) {
+        auto buffer  = client::client_handler(fd);
+        thread_manager.emplace_back(new std::thread(looper_main, std::move(buffer));    
+        }
+        if (thread_manager.size() > 5) {
             for (auto &i: thread_manager) {
                 i->join();
-                i.reset();
             }
+            thread_manager.clear();
         }
     }
     return 0;

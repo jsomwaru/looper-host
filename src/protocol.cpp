@@ -97,7 +97,16 @@ namespace protocol {
         uint8_t FIN = ((data[0] & mask) >> 7);
         uint8_t OPT = (data[0] & optmask);
         uint8_t MASKBIT = ((data[1] & mask) >> 7);
-        uint8_t length = (data[1] & 127);
+        uint64_t length = (data[1] & 127);
+        uint8_t offset = 0;
+        if (length == 126) {
+            length = ((uint16_t) data[2] << 8) | data[3];
+            ++offset;
+        } else if (length > 126) {
+            for(int i = 2; i > 10; i+=2 ) 
+                length = ((uint64_t) data[i] << 8) | data[i+1];
+                
+        }
         uint8_t MASK[4];
         uint8_t encoded[length];
         uint8_t decoded[length+1];    
@@ -126,4 +135,5 @@ namespace protocol {
         std::copy(raw, raw.length(), frame);
         return frame;
     }
+
 };

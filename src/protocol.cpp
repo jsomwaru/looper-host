@@ -3,6 +3,7 @@
 #include "protocol.hpp"
 #include <utility>
 #include <algorithm>
+#include <iterator>
 #include <nlohmann/json.hpp>
 
 using namespace nlohmann;
@@ -131,8 +132,8 @@ namespace protocol {
         //mask
         headers[0] |= 0x1;
         headers[1] = (payload_length << 1);
-        std::copy(headers, headers+2, frame);
-        std::copy(raw, raw.length(), frame);
+        std::copy(headers, headers+2, std::back_inserter(frame));
+        std::copy(raw.begin(), raw.end(), std::back_inserter(frame));
         return frame;
     }
 

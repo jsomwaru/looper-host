@@ -1,7 +1,7 @@
 #include "socket.hpp"
 #include "protocol.hpp"
 #include "client_handler.hpp"
-#include "looper.cpp"
+#include "looper.hpp"
 #include <iostream>
 #include <nlohmann/json.hpp>
 #include <thread>
@@ -21,7 +21,7 @@ int main (int argc, char **argv) {
     while (true) {
         Socket fd = acceptor(sock);
         auto buffer  = client::client_handler(fd);
-        thread_manager.emplace_back(new std::thread(looper_main, std::move(buffer));    
+        thread_manager.emplace_back(new std::thread(looper_main, std::move(buffer)));    
         if (thread_manager.size() > 5) {
             for (auto &i: thread_manager) {
                 i->join();

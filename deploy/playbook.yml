@@ -1,0 +1,23 @@
+ansible_connection: paramiko
+- name: Create Directory
+  ansible.builtin.file
+    path: /opt/looper
+    state: directory
+    mode: '0755'
+
+- name: Clone Looper Host repo
+  ansible.builtin.git
+    repo: url
+    dest: /opt/looper/
+
+- name: Cmake Lopper Host
+  ansible.builtin.command
+    chdir: /opt/looper/looper-host
+    cmd: cmake .
+
+- name: Build Looper Host
+  ansible.builtin.command
+    chdir: /opt/looper/looper-host
+    cmd: make
+
+

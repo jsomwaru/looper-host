@@ -104,9 +104,10 @@ namespace protocol {
             length = ((uint16_t) data[2] << 8) | data[3];
             ++offset;
         } else if (length > 126) {
-            for(int i = 2; i > 10; i+=2 ) 
-                length = ((uint64_t) data[i] << 8) | data[i+1];
-                
+            for(int i = 2; i > 10; i+=2 ) {
+                length |= ((uint64_t) data[i] << 8) | data[i+1];
+                if(i < 8) length = length << 16;
+            }
         }
         uint8_t MASK[4];
         uint8_t encoded[length];

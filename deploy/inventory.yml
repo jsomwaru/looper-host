@@ -1,4 +1,8 @@
 all:
   hosts:
-    192.168.1.83
+    pisound:
+      ansible_host: 192.168.1.83
+      ansible_user: patch
+      ansible_connection: paramiko
+      ansible_password: blokaslabs
 

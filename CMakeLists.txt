@@ -20,7 +20,7 @@ if(NOT cryptlite_POPULATED)
     add_subdirectory(${cryptlite_SOURCE_DIR} ${cryptlite_BINARY_DIR} EXCLUDE_FROM_ALL)
 endif()
 
-find_package(Boost  1.76.0 COMPONENTS REQUIRED)
+find_package(Boost 1.67.0 COMPONENTS REQUIRED)
 
 cmake_minimum_required(VERSION 3.20)
 

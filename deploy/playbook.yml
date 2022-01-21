@@ -1,23 +1,44 @@
-- name: Create Directory
-  ansible.builtin.file
-    path: /opt/looper
-    state: directory
-    mode: '0755'
+---
+- name: Deploy Looper Host
+  hosts: all
+  tasks:
+  - name: Check for cmake
+    ansible.builtin.stat:
+      path: /usr/bin/cmake
+    register: cmake_installed
 
-- name: Clone Looper Host repo
-  ansible.builtin.git
-    repo: git@github.com:jsomwaru/looper-host.git
-    dest: /opt/looper/
-    version: tc-v0.1
+  - name: Install Packages
+    become: yes
+    apt:
+      name:
+        - cmake
+    when: not cmake_installed.stat.exists 
 
-- name: Cmake Lopper Host
-  ansible.builtin.command
-    chdir: /opt/looper/looper-host
-    cmd: cmake .
+  - name: Create Directory
+    become: yes
+    ansible.builtin.file:
+      path: /opt/looper
+      state: directory 
+      mode: '0755'
 
-- name: Build Looper Host
-  ansible.builtin.command
-    chdir: /opt/looper/looper-host
-    cmd: make
+  - name: Change Ownership
+    become: yes
+    ansible.builtin.command:
+      cmd: chown -R patch /opt/looper
+      
+  - name: Clone Looper Host repo
+    ansible.builtin.git:
+      repo: git@github.com:jsomwaru/looper-host.git
+      dest: /opt/looper/looper-host
+      accept_hostkey: yes  
+      version: tc-v0.1
 
+  - name: Cmake Lopper Host
+    ansible.builtin.command:
+      chdir: /opt/looper/looper-host
+      cmd: cmake .
 
+  - name: Build Looper Host
+    ansible.builtin.command:
+      chdir: /opt/looper/looper-host
+      cmd: make

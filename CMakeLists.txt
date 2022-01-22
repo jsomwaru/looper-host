@@ -16,17 +16,19 @@ endif()
 FetchContent_GetProperties(cryptlite)
 if(NOT cryptlite_POPULATED)
     #FetchContent_MakeAvailable(cryptlite)
-    FetchContent_Populate(cryptlite) 
+    FetchContent_Populate(cryptlite)
     add_subdirectory(${cryptlite_SOURCE_DIR} ${cryptlite_BINARY_DIR} EXCLUDE_FROM_ALL)
 endif()
 
-find_package(Boost 1.67.0 COMPONENTS REQUIRED)
+find_package(Boost 1.76 COMPONENTS REQUIRED)
 
-cmake_minimum_required(VERSION 3.20)
+if (NOT Boost_POPULATED)
+    find_package (Boost 1.67 COMPONENTS REQUIRED)
+endif()
+
+cmake_minimum_required(VERSION 3.0)
 
 project(looper_host)
-
-#add_library(jack STATIC IMPORTED)
 
 set(CMAKE_SOURCE_DIR)
 
@@ -47,8 +49,6 @@ include_directories(${cryptlite_SOURCE_DIR}/include)
 LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
 
 add_executable(looper_host ${SOURCE_FILES})
-
-#target_link_libraries(looper_host PRIVATE cryptlite)
 
 target_link_libraries(looper_host PRIVATE nlohmann_json::nlohmann_json)
 

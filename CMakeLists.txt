@@ -29,7 +29,7 @@ set(CMAKE_SOURCE_DIR)
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(CMAKE_CXX_FLAGS "-Wall  -std=c++14 -stdlib=libc++")
+set(CMAKE_CXX_FLAGS "-Wall  -std=c++14 -pthread")
 
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 

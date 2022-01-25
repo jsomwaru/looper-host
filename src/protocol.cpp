@@ -1,5 +1,7 @@
 #include <cryptlite/sha1.h>
 #include <cryptlite/base64.h>
+#include <boost/beast/core/detail/base64.hpp>
+//#include <boost/uuid/sha1.hpp>
 #include "protocol.hpp"
 #include <utility>
 #include <algorithm>
@@ -32,6 +34,14 @@ void debug_msg(const std::string &msg) {
 
 
 namespace protocol {
+    namespace util {
+        std::string b64_encode(const std::string& data) {
+            std::string dest;
+            dest.resize(boost::beast::detail::base64::encoded_size(data.size()));            
+            boost::beast::detail::base64::encode(&dest, data.c_str(), data.size());
+            return dest;
+        }
+    };
     
     std::string readMsg(int fd) {
         int chunk_sz = 2048;

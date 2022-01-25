@@ -42,7 +42,7 @@ include_directories(looper_host PUBLIC src/include)
 
 include_directories(${cryptlite_SOURCE_DIR}/include)
 
-LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
+link_directories(${Boost_LIBRARY_DIRS})
 
 add_executable(looper_host ${SOURCE_FILES})
 

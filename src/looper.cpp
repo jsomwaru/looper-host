@@ -14,6 +14,7 @@
 #include <unistd.h>
 #endif
 #include <vector>
+#include <jack/jack.h> 
 
 #include "looper.hpp"
 

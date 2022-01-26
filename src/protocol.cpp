@@ -1,5 +1,5 @@
 #include <cryptlite/sha1.h>
-#include <cryptlite/base64.h>
+//#include <cryptlite/base64.h>
 #include <boost/beast/core/detail/base64.hpp>
 //#include <boost/uuid/sha1.hpp>
 #include "protocol.hpp"
@@ -41,6 +41,15 @@ namespace protocol {
             boost::beast::detail::base64::encode(&dest, data.c_str(), data.size());
             return dest;
         }
+
+        std::string sha1(const std::string& data) {
+            return cryptlite::sha1::hash_hex(data); 
+        }
+        
+        std::string hash_b64(const std::string data) {
+            auto a = sha1(data);
+            return b64_encode(a);
+        }    
     };
     
     std::string readMsg(int fd) {
@@ -75,7 +84,7 @@ namespace protocol {
         headerdict parsed_headers = protocol::parse_headers(headers);
         std::string sentkey(parsed_headers["Sec-WebSocket-Key"]);
         std::string acceptkey = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
-        std::string socketkey = cryptlite::sha1::hash_base64(sentkey + acceptkey); 
+        std::string socketkey = protocol::util::hash_b64(sentkey + acceptkey); 
         std::string upgrade   = "HTTP/1.1 101 Switching Protocols\r\n"
                                 "Upgrade: websocket\r\n" 
                                 "Connection: Upgrade\r\n";

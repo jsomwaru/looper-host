@@ -1,7 +1,7 @@
-#include <cryptlite/sha1.h>
+//#include <cryptlite/sha1.h>
 //#include <cryptlite/base64.h>
 #include <boost/beast/core/detail/base64.hpp>
-//#include <boost/uuid/sha1.hpp>
+#include <boost/compute/detail/sha1.hpp>
 #include "protocol.hpp"
 #include <utility>
 #include <algorithm>
@@ -10,7 +10,7 @@
 
 using namespace nlohmann;
 
-using namespace cryptlite;
+//using namespace cryptlite;
 
 
 void printdict(const headerdict &dict) {
@@ -43,7 +43,9 @@ namespace protocol {
         }
 
         std::string sha1(const std::string& data) {
-            return cryptlite::sha1::hash_hex(data); 
+            boost::compute::detail::sha1 hash { data };
+            std::string s { hash };
+            return s; 
         }
         
         std::string hash_b64(const std::string data) {

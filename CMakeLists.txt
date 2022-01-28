@@ -40,8 +40,6 @@ if (APPLE)
         PATHS
             /usr/local/lib
     )
-
-
 endif()
 
 find_package(Boost 1.67 COMPONENTS REQUIRED)
@@ -66,7 +64,7 @@ add_executable(looper_host ${SOURCE_FILES})
 
 target_link_libraries(looper_host PRIVATE nlohmann_json::nlohmann_json)
 
-if (LINUX)
+if (APPLE EQUAL 0)
     target_link_libraries(looper_host PRIVATE jack)
 elseif(APPLE)
     target_link_libraries(looper_host PRIVATE ${JACK_LIBRARIES})

@@ -1,6 +1,8 @@
 ---
 - name: Deploy Looper Host
   hosts: all
+  vars:
+    - start: "{{ start | default(false) }}"
   tasks:
   - name: Check for cmake
     ansible.builtin.stat:
@@ -42,3 +44,9 @@
     ansible.builtin.command:
       chdir: /opt/looper/looper-host
       cmd: make
+
+  - name: Start Looper Host
+    ansible.builtin.command:
+      chdir: /opt/looper/looper-host
+      cmd: nohup ./looper_host < /dev/null > /dev/null &2>1 &
+    when: start | bool

@@ -5,3 +5,6 @@ Setup:
 
 Run:
 `ansible-playbook -i inventory.yml  playbook.yml`
+
+Mac may need this:
+`export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES`

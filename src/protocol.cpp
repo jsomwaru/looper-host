@@ -1,12 +1,18 @@
 //#include <cryptlite/sha1.h>
 //#include <cryptlite/base64.h>
 #include <boost/beast/core/detail/base64.hpp>
+#include <cryptlite/sha1.h>
 #include <boost/compute/detail/sha1.hpp>
 #include "protocol.hpp"
 #include <utility>
 #include <algorithm>
 #include <iterator>
 #include <nlohmann/json.hpp>
+#include <boost/archive/iterators/binary_from_base64.hpp>
+#include <boost/archive/iterators/base64_from_binary.hpp>
+#include <boost/archive/iterators/transform_width.hpp>
+#include <boost/algorithm/string.hpp>
+
 
 using namespace nlohmann;
 
@@ -35,10 +41,16 @@ void debug_msg(const std::string &msg) {
 
 namespace protocol {
     namespace util {
+
+        std::string encode64(const std::string &val) {
+            using namespace boost::archive::iterators;
+            using It = base64_from_binary<transform_width<std::string::const_iterator, 6, 8>>;
+            auto tmp = std::string(It(std::begin(val)), It(std::end(val)));
+            return tmp.append((3 - val.size() % 3) % 3, '=');                        
+        }
+
         std::string b64_encode(const std::string& data) {
             std::string dest;
-            dest.resize(boost::beast::detail::base64::encoded_size(data.size()));            
-            boost::beast::detail::base64::encode(&dest, data.c_str(), data.size());
             return dest;
         }
 
@@ -50,7 +62,8 @@ namespace protocol {
         
         std::string hash_b64(const std::string data) {
             auto a = sha1(data);
-            return b64_encode(a);
+            std::cerr <<data << ' '<< a << '\n';
+            return encode64(a);
         }    
     };
     
@@ -86,10 +99,13 @@ namespace protocol {
         headerdict parsed_headers = protocol::parse_headers(headers);
         std::string sentkey(parsed_headers["Sec-WebSocket-Key"]);
         std::string acceptkey = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
-        std::string socketkey = protocol::util::hash_b64(sentkey + acceptkey); 
+        std::string socketkey = cryptlite::sha1::hash_base64(sentkey + acceptkey); 
+        std::string tmpkey = sentkey + acceptkey;
+        std::string a  = util::hash_b64(tmpkey);
+        std::cout << a << ' '<< socketkey<< std::endl;
         std::string upgrade   = "HTTP/1.1 101 Switching Protocols\r\n"
                                 "Upgrade: websocket\r\n" 
-                                "Connection: Upgrade\r\n";
+                                "Connection: upgrade\r\n";
         upgrade.append("Sec-WebSocket-Accept: " + socketkey + "\r\n\r\n");
         auto tmp = sock.send_(upgrade);
         return tmp;

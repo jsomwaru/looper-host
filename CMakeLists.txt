@@ -9,7 +9,7 @@ FetchContent_Declare(json
   GIT_TAG v3.7.3)
 
 FetchContent_Declare(cryptlite
-  GIT_REPOSITORY https://github.com/lyokato/cpp-cryptlite.git)
+  GIT_REPOSITORY https://github.com/jsomwaru/cpp-cryptlite.git)
 
 FetchContent_GetProperties(json)
 if(NOT json_POPULATED)

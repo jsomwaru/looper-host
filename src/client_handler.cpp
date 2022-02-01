@@ -25,6 +25,7 @@ namespace client {
         try {
             std::string trackdata = protocol::readMsg(sock);
             trackdata = protocol::decode_frame(trackdata);
+            std::cout << trackdata << std::endl;
             track = json::parse(trackdata);
             std::cerr << track.dump() << '\n';
         } catch(...) {

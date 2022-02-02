@@ -1,0 +1,52 @@
+---
+- name: Deploy Looper Host
+  hosts: all
+  vars:
+    - start_: "{{ start | default(false) }}"
+  tasks:
+  - name: Check for cmake
+    ansible.builtin.stat:
+      path: /usr/bin/cmake
+    register: cmake_installed
+
+  - name: Install Packages
+    become: yes
+    apt:
+      name:
+        - cmake
+    when: not cmake_installed.stat.exists 
+
+  - name: Create Directory
+    become: yes
+    ansible.builtin.file:
+      path: /opt/looper
+      state: directory 
+      mode: '0755'
+
+  - name: Change Ownership
+    become: yes
+    ansible.builtin.command:
+      cmd: chown -R patch /opt/looper
+      
+  - name: Clone Looper Host repo
+    ansible.builtin.git:
+      repo: git@github.com:jsomwaru/looper-host.git
+      dest: /opt/looper/looper-host
+      accept_hostkey: yes  
+      version: tc-v0.1
+
+  - name: Cmake Lopper Host
+    ansible.builtin.command:
+      chdir: /opt/looper/looper-host
+      cmd: cmake .
+
+  - name: Build Looper Host
+    ansible.builtin.command:
+      chdir: /opt/looper/looper-host
+      cmd: make
+
+  - name: Start Looper Host
+    ansible.builtin.command:
+      chdir: /opt/looper/looper-host
+      cmd: tmux new-session -d -s looper_host './looper_host'
+    when: start_ | bool

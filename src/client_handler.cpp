@@ -21,14 +21,12 @@ namespace client {
         if (!(protocol::upgrade_connection(sock, msg) > 0)) {
             return -1;
         }
-               if (trackdata.length() == 0) {
-            sock.close_();
-            return 0;
-        }
+        json track;
         try {
             std::string trackdata = protocol::readMsg(sock);
-            trackdata = protocol::decode_frame(track_data);
-            json track = json::parse(trackdata);
+            trackdata = protocol::decode_frame(trackdata);
+            std::cout << trackdata << std::endl;
+            track = json::parse(trackdata);
             std::cerr << track.dump() << '\n';
         } catch(...) {
             std::cerr << "decoding data failed\n";

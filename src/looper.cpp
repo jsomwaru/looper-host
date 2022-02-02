@@ -13,13 +13,15 @@
 #ifndef WIN32
 #include <unistd.h>
 #endif
-#include <jack/jack.h>
 #include <vector>
-#include <nlohmann/json.hpp>
+#include <jack/jack.h> 
 
-using json = nlohmann::json;
+#include "looper.hpp"
 
-jack_client_t *client;
+using std::vector;
+
+jack_client_t *jc;
+vector<jack_port_t*> output_ports(2, nullptr);
 
 #ifndef M_PI
 #define M_PI  (3.14159265)
@@ -29,7 +31,7 @@ jack_client_t *client;
 
 static void signal_handler(int sig)
 {
-	jack_client_close(client);
+	jack_client_close(jc);
 	fprintf(stderr, "signal received, exiting ...\n");
 	exit(0);
 }
@@ -44,10 +46,12 @@ static void signal_handler(int sig)
 
 int process_file(jack_nframes_t nframes, void * arg) {
 	jack_default_audio_sample_t *out; 
-	out = static_cast<jack_default_audio_sample_t*>(jack_port_get_buffer(output_port1, nframes));
-	uint32_t *data = static_cast<short*>(arg);
-    for(int i = 0; i < nframes; ++i) {
-		out[i] = data[i];
+	out = static_cast<jack_default_audio_sample_t*>(jack_port_get_buffer(output_ports[0], nframes));
+    //out1 = static_cast<jack_default_audio_sample_t*>(jack_port_get_buffer(output_ports[1], nframes));
+	auto *data = static_cast<vector<vector<float>>*>(arg);
+    vector<float> data1 = (*data)[0]; 
+    for(unsigned int i = 0; i < nframes; ++i) {
+		out[i] = (jack_default_audio_sample_t)(data1[i]);
 	}
 	return 0;
 	
@@ -57,23 +61,27 @@ int process_file(jack_nframes_t nframes, void * arg) {
  * JACK calls this shutdown_callback if the server ever shuts down or
  * decides to disconnect the client.
  */
-void jack_shutdown (void *arg) {
+void jack_shutdown (void *arg) { 
 	exit (1);
 }
 
 int looper_main (json buffer) {
-	const char **ports;
-	const char *client_name = "looper";
+    const char **ports;
+    const char *client_name = "looper";
 	const char *server_name = NULL;
-	jack_options_t options = JackNullOption;
+    jack_options_t options = JackNullOption;
 	jack_status_t status;
-    auto *left = buffer.get<uint8_t>("left");
-    auto *right = buffer.get<uint8_t>("right");
+    auto left = buffer["left"].get<vector<float>>();
+    auto right = buffer["right"].get<vector<float>>();
+    vector<vector<float>> lr_void;
+    
+    lr_void.push_back(left);
+    lr_void.push_back(right);
 
 	/* open a client connection to the JACK server */
 
-	client = jack_client_open (client_name, options, &status, server_name);
-	if (client == NULL) {
+	jc = jack_client_open(client_name, options, &status, server_name);
+	if (jc == NULL) {
 		fprintf (stderr, "jack_client_open() failed, "
 			 "status = 0x%2.0x\n", status);
 		if (status & JackServerFailed) {
@@ -85,7 +93,7 @@ int looper_main (json buffer) {
 		fprintf (stderr, "JACK server started\n");
 	}
 	if (status & JackNameNotUnique) {
-		client_name = jack_get_client_name(clieant);
+		client_name = jack_get_client_name(jc);
 		fprintf (stderr, "unique name `%s' assigned\n", client_name);
 	}
 
@@ -93,26 +101,26 @@ int looper_main (json buffer) {
 	   there is work to be done.
 	*/
 
-	jack_set_process_callback (client, process_file, &buffer);
+	jack_set_process_callback (jc, process_file, &lr_void);
 
 	/* tell the JACK server to call `jack_shutdown()' if
 	   it ever shuts down, either entirely, or if it
 	   just decides to stop calling us.
 	*/
 
-	jack_on_shutdown (client, jack_shutdown, 0);
+	jack_on_shutdown(jc, jack_shutdown, 0);
 
 	/* create two ports */
-    vector<jack_port_t*> output_ports(2);
-	for(int i = 0; i < output_ports.size(); ++i) {
+
+	for(unsigned int i = 0; i < output_ports.size(); ++i) {
 		// looper_out_
 		char name[13];
-		sprintf(name, "looper_out_%d", (i+1));
-		auto *tmp_port = jack_port_register (client, name,
+		sprintf(name, "looper_out_%u", (i+1));
+		auto *tmp_port = jack_port_register (jc, name,
 					  JACK_DEFAULT_AUDIO_TYPE,
 					  JackPortIsOutput, 0);
         if(tmp_port == NULL) {
-            fprint(stderr, "output port not available");
+            fprintf(stderr, "output port not available");
             exit(1);
         }
         output_ports[i] = tmp_port;
@@ -122,7 +130,7 @@ int looper_main (json buffer) {
 	/* Tell the JACK server that we are ready to roll.  Our
 	 * process() callback will start running now. */
 
-	if (jack_activate (client)) {
+	if (jack_activate (jc)) {
 		fprintf (stderr, "cannot activate client");
 		exit (1);
 	}
@@ -135,14 +143,14 @@ int looper_main (json buffer) {
 	 * it.
 	 */
  	
-	ports = jack_get_ports (client, NULL, NULL,
+	ports = jack_get_ports (jc, NULL, NULL,
 				JackPortIsPhysical|JackPortIsInput);
 	if (ports == NULL) {
 		fprintf(stderr, "no physical playback ports\n");
 		exit (1);
 	}
-    for (int i =  0; i < output_ports.size(); ++i) {
-	    if (jack_connect(client, jack_port_name(output_ports[i]), ports[i])) {
+    for (unsigned int i =  0; i < output_ports.size(); ++i) {
+	    if (jack_connect(jc, jack_port_name(output_ports[i]), ports[i])) {
 		    fprintf (stderr, "cannot connect output ports\n");
 	    }
     }
@@ -171,6 +179,6 @@ int looper_main (json buffer) {
 	#endif
 	}
 
-	jack_client_close (client);
+	jack_client_close (jc);
 	exit (0);
 }

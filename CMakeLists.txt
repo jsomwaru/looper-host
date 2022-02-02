@@ -70,5 +70,4 @@ elseif(APPLE)
     target_link_libraries(looper_host PRIVATE ${JACK_LIBRARIES})
 endif()
 
-
-INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
+include_directories(${Boost_INCLUDE_DIRS})

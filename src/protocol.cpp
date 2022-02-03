@@ -100,9 +100,6 @@ namespace protocol {
         std::string sentkey(parsed_headers["Sec-WebSocket-Key"]);
         std::string acceptkey = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
         std::string socketkey = cryptlite::sha1::hash_base64(sentkey + acceptkey); 
-        std::string tmpkey = sentkey + acceptkey;
-        std::string a  = util::hash_b64(tmpkey);
-        std::cout << a << ' '<< socketkey<< std::endl;
         std::string upgrade   = "HTTP/1.1 101 Switching Protocols\r\n"
                                 "Upgrade: websocket\r\n" 
                                 "Connection: upgrade\r\n";

@@ -85,7 +85,7 @@ namespace protocol {
            buf = (char*)realloc(buf, sizeof(char));
         }
         buf[len] = '\0';
-        std::cout << "Real Length" << std::endl;
+        std::cout << "Real Length " << len  << std::endl;
         std::string newbuf(buf);
         debug_msg(newbuf);
         delete [] buf;

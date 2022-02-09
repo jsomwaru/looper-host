@@ -27,6 +27,7 @@ public:
         size_t read_len = 0;
         size_t chunk = 2048;
         StreamResponse response;
+	std::cerr << "read stream\n";
         do {
 	  std::cerr << "Read len " << read_len << '\n';
             response.reserve(chunk);

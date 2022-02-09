@@ -28,6 +28,7 @@ public:
         size_t chunk = 2048;
         StreamResponse response;
         do {
+	  std::cerr << "Read len " << read_len << '\n';
             response.reserve(chunk);
             read_len += read(fd.fd(), response + read_len, chunk);
         } while(read_len == chunk);

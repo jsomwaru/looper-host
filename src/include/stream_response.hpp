@@ -30,7 +30,7 @@ public:
 	std::cerr << "read stream\n";
         do {
 	  std::cerr << "Read len " << read_len << '\n';
-            response.reserve(chunk);
+            response.reserve(chunk+read_len);
             read_len += read(fd.fd(), response + read_len, chunk);
         } while(read_len == chunk);
         return response;

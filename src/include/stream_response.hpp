@@ -29,9 +29,9 @@ public:
         StreamResponse response;
 	std::cerr << "read stream\n";
         do {
-	  std::cerr << "Read len " << read_len << '\n';
             response.resize(chunk+read_len);
             read_len += read(fd.fd(), response + read_len, chunk);
+	    std::cerr << "Read len " << read_len << '\n';
         } while(read_len == chunk);
         return response;
     }  

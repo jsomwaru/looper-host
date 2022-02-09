@@ -2,7 +2,8 @@
 #define STREAM_RESPONSE_HPP
 
 #include <vector>
-#include  <iostream>
+#include <iostream>
+#include <iterator>
 #include "socket.hpp"
 
 using std::vector; 
@@ -11,10 +12,15 @@ struct StreamResponse {
     uint8_t* operator+(const size_t &len) {
         return buffer.data() + len;
     }
+  
     void resize(const size_t n) {
         buffer.resize(n);
-    } 
-    vector<uint8_t> buffer;
+    }
+
+  void write_buffer(const uint8_t *data, const size_t len) {
+    std::copy(data, data+len, std::back_inserter(buffer));
+  }
+  vector<uint8_t> buffer;
 };
 
 class StreamReader {
@@ -29,9 +35,10 @@ public:
         StreamResponse response;
 	std::cerr << "read stream\n";
         do {
-            response.resize(chunk+read_len);
-            read_len += read(fd.fd(), response + read_len, chunk);
+       	    uint8_t data[chunk];
+            read_len += read(fd.fd(), data, chunk);
 	    std::cerr << "Read len " << read_len << '\n';
+	    response.write_buffer(data, read_len);
         } while(read_len == chunk);
         return response;
     }  

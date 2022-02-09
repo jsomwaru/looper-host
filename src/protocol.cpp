@@ -1,5 +1,3 @@
-//#include <cryptlite/sha1.h>
-//#include <cryptlite/base64.h>
 #include <boost/beast/core/detail/base64.hpp>
 #include <cryptlite/sha1.h>
 #include <boost/compute/detail/sha1.hpp>
@@ -8,14 +6,10 @@
 #include <algorithm>
 #include <iterator>
 #include <nlohmann/json.hpp>
-#include <boost/archive/iterators/binary_from_base64.hpp>
-#include <boost/archive/iterators/base64_from_binary.hpp>
-#include <boost/archive/iterators/transform_width.hpp>
-#include <boost/algorithm/string.hpp>
-
+#include <vector>
 
 using namespace nlohmann;
-
+using std::vector;
 //using namespace cryptlite;
 
 
@@ -40,32 +34,6 @@ void debug_msg(const std::string &msg) {
 
 
 namespace protocol {
-    namespace util {
-
-        std::string encode64(const std::string &val) {
-            using namespace boost::archive::iterators;
-            using It = base64_from_binary<transform_width<std::string::const_iterator, 6, 8>>;
-            auto tmp = std::string(It(std::begin(val)), It(std::end(val)));
-            return tmp.append((3 - val.size() % 3) % 3, '=');                        
-        }
-
-        std::string b64_encode(const std::string& data) {
-            std::string dest;
-            return dest;
-        }
-
-        std::string sha1(const std::string& data) {
-            boost::compute::detail::sha1 hash { data };
-            std::string s { hash };
-            return s; 
-        }
-        
-        std::string hash_b64(const std::string data) {
-            auto a = sha1(data);
-            std::cerr <<data << ' '<< a << '\n';
-            return encode64(a);
-        }    
-    };
     
     std::string readMsg(int fd) {
         int chunk_sz = 2048;
@@ -125,7 +93,8 @@ namespace protocol {
         } 
         return headers;
     }
-
+    
+    
     std::string decode_frame(std::string &raw) {
         const uint8_t *data = reinterpret_cast<const uint8_t*>(raw.c_str());
         uint8_t mask = 0x80;
@@ -155,6 +124,34 @@ namespace protocol {
         decoded[length] = '\0';
         std::string decodeddata((char*)decoded);
         return decodeddata;
+    }
+
+  vector<uint8_t> decode_frame_t(const vector<uint8_t> &data) {
+        uint8_t mask = 0x80;
+        uint8_t optmask = 0x0f;
+        uint8_t FIN = ((data[0] & mask) >> 7);
+        uint8_t OPT = (data[0] & optmask);
+        uint8_t MASKBIT = ((data[1] & mask) >> 7);
+        uint64_t length = (data[1] & 127);
+        uint8_t offset = 0;
+        if (length == 126) {
+            length = ((uint16_t) data[2] << 8) | data[3];
+            ++offset;
+        } else if (length > 126) {
+            for(int i = 2; i > 10; i+=2 ) {
+                length |= ((uint64_t) data[i] << 8) | data[i+1];
+                if(i < 8) length = length << 16;
+            }
+        }
+        uint8_t MASK[4];
+        vector<uint8_t> encoded;
+        vector<uint8_t> decoded(length);    
+        std::copy(&data[2], &data[6], MASK);
+        std::copy(&data[6], &data[data.size()], std::back_inserter<vector<uint8_t>>(encoded));
+        for (int i = 0; i < length; ++i) {
+            decoded[i] = (encoded[i] ^ MASK[i % 4]);
+        }
+        return decoded;
     }
 
     std::string encode_frame(const std::string &raw) {

@@ -1,6 +1,7 @@
 #include "client_handler.hpp"
 #include "protocol.hpp"
 //#include "logging.hpp"
+#include "stream_response.hpp"
 #include <nlohmann/json.hpp>
 #include <string>
 #include <unordered_map>
@@ -23,11 +24,10 @@ namespace client {
         }
         json track;
         try {
-            std::string trackdata = protocol::readMsg(sock);
-            trackdata = protocol::decode_frame(trackdata);
-            std::cout << trackdata << std::endl;
-            track = json::parse(trackdata);
-            std::cerr << track.dump() << '\n';
+            StreamReader reader(sock);
+            StreamResponse res = reader.read_stream();
+            auto tmp = protocol::decode_frame_t(res.buffer);
+            std::cout << tmp.size() << std::endl;
         } catch(...) {
             std::cerr << "decoding data failed\n";
             return -1; 

@@ -11,8 +11,8 @@ struct StreamResponse {
     uint8_t* operator+(const size_t &len) {
         return buffer.data() + len;
     }
-    void reserve(const size_t n) {
-        buffer.reserve(n);
+    void resize(const size_t n) {
+        buffer.resize(n);
     } 
     vector<uint8_t> buffer;
 };
@@ -30,7 +30,7 @@ public:
 	std::cerr << "read stream\n";
         do {
 	  std::cerr << "Read len " << read_len << '\n';
-            response.reserve(chunk+read_len);
+            response.resize(chunk+read_len);
             read_len += read(fd.fd(), response + read_len, chunk);
         } while(read_len == chunk);
         return response;

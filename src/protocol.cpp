@@ -138,10 +138,9 @@ namespace protocol {
             ++offset;
         } else if (length > 126) {
 		    length = 0;
-			for(int i = 2; i < 10; i+=2 ) {
-			    uint16_t twoints = data[i];
-                length |= ((uint64_t) twoints << 8) | data[i+1];
-                if(i < 8) length = length << 16;
+			for(int i = 2; i < 10; ++i) {
+			  length |= data[i];
+			  if (i > 9) length = length << 8;
             }
 	    std::cout << "unsinged length " << unsigned(length) << std::endl;
         }

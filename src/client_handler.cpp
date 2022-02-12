@@ -26,6 +26,7 @@ namespace client {
         try {
             StreamReader reader(sock);
             StreamResponse res = reader.read_stream();
+            std::cout << res.buffer.size() << std::endl;
             auto tmp = protocol::decode_frame_t(res.buffer);
             std::cout << tmp.size() << std::endl;
         } catch(...) {

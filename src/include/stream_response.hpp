@@ -9,17 +9,18 @@
 using std::vector; 
 
 struct StreamResponse {
-    uint8_t* operator+(const size_t &len) {
+  uint8_t* operator+(const size_t &len) {
         return buffer.data() + len;
     }
   
-    void resize(const size_t n) {
-        buffer.resize(n);
-    }
+  void resize(const size_t n) {
+    buffer.resize(n);
+  }
 
   void write_buffer(const uint8_t *data, const size_t len) {
     std::copy(data, data+len, std::back_inserter(buffer));
   }
+
   vector<uint8_t> buffer;
 };
 
@@ -28,8 +29,8 @@ class StreamReader {
  * Reads binary stream of data into vectors
  */
 public:
-    StreamReader(const Socket fd_): fd(fd_) {  }
-    StreamResponse read_stream() {
+  StreamReader(const Socket fd_): fd(fd_) {  }
+  StreamResponse read_stream() {
         size_t read_len = 0;
         size_t chunk = 2048;
         StreamResponse response;

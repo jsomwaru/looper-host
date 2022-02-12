@@ -40,6 +40,20 @@
       chdir: /opt/looper/looper-host
       cmd: cmake .
 
+  - name: Check for prebuilt looper host
+    ansible.builtin.stat:
+      path: /opt/looper/looper-host/looper_host
+    register: prebuilt
+
+    # Make on pisound does detect differnces very well
+    # and sometimes does not build a new executable
+    # even is there are changes
+  - name: "Make clean"
+    ansible.builtin.command:
+      chdir: /opt/looper/looper-host/
+      cmd: make clean
+    when: prebuilt.stat.exists
+
   - name: Build Looper Host
     ansible.builtin.command:
       chdir: /opt/looper/looper-host

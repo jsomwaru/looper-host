@@ -140,7 +140,7 @@ namespace protocol {
 		    length = 0;
 			for(int i = 2; i < 10; ++i) {
 			  length |= data[i];
-			  if (i > 9) length = length << 8;
+			  if (i < 9) length = length << 8;
             }
 	    std::cout << "unsinged length " << unsigned(length) << std::endl;
         }

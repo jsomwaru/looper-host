@@ -137,9 +137,9 @@ namespace protocol {
             length = ((uint16_t) data[2] << 8) | data[3];
             ++offset;
         } else if (length > 126) {
-            length = 0;
-		    for(int i = 2; i > 10; i+=2 ) {
-                uint16_t twoints = data[i];
+		    length = 0;
+			for(int i = 2; i < 10; i+=2 ) {
+			    uint16_t twoints = data[i];
                 length |= ((uint64_t) twoints << 8) | data[i+1];
                 if(i < 8) length = length << 16;
             }

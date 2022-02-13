@@ -31,13 +31,13 @@ class StreamReader {
 public:
   StreamReader(const Socket fd_): fd(fd_) {  }
   StreamResponse read_stream() {
-        size_t read_len = 0;
-        size_t chunk = 2048;
+	    size_t read_len = 0;
+	    size_t chunk = 2048;
         StreamResponse response;
 	std::cerr << "read stream\n";
         do {
        	    uint8_t data[chunk];
-            read_len += read(fd.fd(), data, chunk);
+            read_len = read(fd.fd(), data, chunk);
 	    std::cerr << "Read len " << read_len << '\n';
 	    response.write_buffer(data, read_len);
         } while(read_len != 0);

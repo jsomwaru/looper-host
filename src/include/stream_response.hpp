@@ -40,7 +40,7 @@ public:
             read_len += read(fd.fd(), data, chunk);
 	    std::cerr << "Read len " << read_len << '\n';
 	    response.write_buffer(data, read_len);
-        } while(read_len == chunk);
+        } while(read_len != 0);
         return response;
     }  
 private:

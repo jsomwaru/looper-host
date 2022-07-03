@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <iostream>
+#include <poll.h>
 
 using std::ostream; 
 
@@ -46,6 +47,8 @@ public:
     void close_ () { close(handle_); }
 
     inline char* client_ip() const { return inet_ntoa(port_.address_.sin_addr); }
+
+    pollfd poller();
 
     friend Socket acceptor(Socket&);
     friend Socket mksocket(Socket);

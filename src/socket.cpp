@@ -99,3 +99,9 @@ ostream& operator<<(ostream &os, const Socket &sock) {
     sock.port_.print();
     return os << sock.handle_ << ' ' << &sock.port_  << std::endl;
 } 
+
+pollfd Socket::poller() {
+    pollfd tmp;
+    tmp.fd = handle_;
+    return tmp;
+}

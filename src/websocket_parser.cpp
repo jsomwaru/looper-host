@@ -30,6 +30,6 @@ void WebSocketParser::decode() {
     _payload.clear();
 	_payload.reserve(length);
 	for (int i = 0; i < length; ++i) {                                                 
-    	_payload += std::static_cast<char>(encoded[i] ^ MASK[i % 4]);
+    	_payload += std::static_cast<uint8_t>(encoded[i] ^ MASK[i % 4]);
     }
 }

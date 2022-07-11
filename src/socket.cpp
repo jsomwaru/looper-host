@@ -2,6 +2,7 @@
 #include <stdexcept>
 #include <cstring>
 #include <utility>
+#include <time.h>
 
 Socket::Socket(int handle) {
     if(handle<=0) {
@@ -11,7 +12,6 @@ Socket::Socket(int handle) {
     port_ = SocketAddress();
 }   
 
-
 Socket::Socket(int handle, int port) {
     if (handle<=0)
         throw std::runtime_error("invalid socket");
@@ -20,7 +20,13 @@ Socket::Socket(int handle, int port) {
     opt = 1;
     if (setsockopt(handle_, SOL_SOCKET, SO_REUSEADDR, &opt, (socklen_t)sizeof(opt))) {
         throw std::runtime_error("Socket failed setsockopt");
-    } 
+    }
+    timeval timeout{10, 0};
+    setsockopt(handle_, SOL_SOCKET, SO_RCVTIMEO, &timeout,(socklen_t)sizeof(timeout));
+    timeval testtimeout;
+    socklen_t tmp = sizeof(testtimeout);
+    getsockopt(handle_, SOL_SOCKET, SO_RCVTIMEO, &testtimeout, &tmp);
+    std::cout << (int)testtimeout.tv_sec << std::endl;
 }
 
 Socket::Socket(Socket&& rhs) {

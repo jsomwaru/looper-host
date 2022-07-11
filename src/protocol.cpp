@@ -63,6 +63,7 @@ namespace protocol {
         return readMsg(sock.fd());
     }
 
+    // DEPRECATED
     int upgrade_connection(Socket &sock, std::string &headers) {
         headerdict parsed_headers = protocol::parse_headers(headers);
         std::string sentkey(parsed_headers["Sec-WebSocket-Key"]);
@@ -76,7 +77,19 @@ namespace protocol {
         return tmp;
     }
 
-    headerdict parse_headers(std::string &rawheaders) {
+   int upgrade_connection_payload(const std::string &headers) {
+        headerdict parsed_headers = protocol::parse_headers(headers);
+        std::string sentkey(parsed_headers["Sec-WebSocket-Key"]);
+        std::string acceptkey = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+        std::string socketkey = cryptlite::sha1::hash_base64(sentkey + acceptkey); 
+        std::string upgrade   = "HTTP/1.1 101 Switching Protocols\r\n"
+                                "Upgrade: websocket\r\n" 
+                                "Connection: upgrade\r\n";
+        upgrade.append("Sec-WebSocket-Accept: " + socketkey + "\r\n\r\n");
+        return upgrade
+    }
+
+    headerdict parse_headers(const std::string &rawheaders) {
         std::istringstream iss(rawheaders);
         std::string line;
         headerdict headers;
@@ -169,6 +182,34 @@ namespace protocol {
         std::copy(headers, headers+2, std::back_inserter(frame));
         std::copy(raw.begin(), raw.end(), std::back_inserter(frame));
         return frame;
+    }
+
+    template <typename T, typename A>
+    Frame decode_frame_buffer(const vector<T,A> &buf) {
+        uint8_t mask = 0x80;
+        uint8_t optmask = 0x0f;
+        uint8_t FIN = ((buf[0] & mask) >> 7);
+        uint8_t OPT = (buf[0] & optmask);
+        uint8_t MASKBIT = ((buf[1] & mask) >> 7);
+        uint8_t ini_length = (buf[1] & 127);
+        uint8_t offset = 0;
+        uint64_t length;
+        if(ini_length == 126) {
+            length = (buf[2] << 8) | buf[3];
+            offset = 4;
+        } else if (ini_length == 127) {
+            length = (buf[2] << 8) | buf[3];
+            length = (length << 8) | buf[4];
+            length = (length << 8) | buf[5];
+            length = (length << 8) | buf[6];
+            length = (length << 8) | buf[7];
+            length = (length << 8) | buf[8];
+            offset = 9;
+        } else 
+            offset = 2;
+        uint8_t MASK[4];
+        std::copy(&buf[offset], &buf[offset+4], MASK);
+        return Frame(FIN, length, MASK);
     }
 
 };

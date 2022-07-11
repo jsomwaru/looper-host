@@ -9,7 +9,7 @@ public:
     WebSocketParser() {}
     WebSocketParser(const string &payload): _payload(payload) {} 
     ~WebSocketParser() {}
-    WebsocketParser(const WebSocketParser&) {}
+    WebSocketParser(const WebSocketParser&) {}
     WebSocketParser& operator=(const WebSocketParser&);
 
     inline string payload() const { return _payload; }

@@ -4,7 +4,8 @@
 #include <vector>
 #include <iostream>
 #include <iterator>
-#include <poll.h> 
+#include <poll.h>
+#include <stdio.h>
 #include "socket.hpp"
 
 using std::vector; 
@@ -22,7 +23,6 @@ struct StreamResponse {
       std::cerr << "writing\n";
       std::copy(data, data+len, std::back_inserter(buffer));
   }
-
   vector<uint8_t> buffer;
 };
 
@@ -33,29 +33,23 @@ class StreamReader {
 public:
   StreamReader(const Socket fd_): fd(fd_) {  }
   StreamResponse read_stream() {
-	    size_t read_len = 0;
-	    size_t chunk = 2048;
+        size_t read_len;
+        size_t chunk = 12000;
+        uint8_t data[chunk];
         StreamResponse response;
-        std::cerr << "read stream\n";
-        pollfd pfd = fd.poller();
-        size_t total = 0;
-        do {
-            poll(&pfd, 1, -1); 
-       	    uint8_t data[chunk];
-            if(pfd.revents & POLLIN)
-                std::cerr << "socket is ready\n";
-            std::cerr << "about to call read mf\n";
-            read_len = read(fd.fd(), data, chunk);
+        while((read_len = recv(fd.fd(), data, chunk, 0)) > 0) {
             std::cerr << "Read len " << read_len << '\n';
             response.write_buffer(data, read_len);
             std::cerr << "Total " << response.buffer.size() << '\n';
-        } while(read_len != 0);
+            memset(data, 0, chunk);
+        } 
         return response;
-    }  
+    }
+    int close_websocket() {
+        
+    }
 private:
     Socket fd;
 };
-
-
 
 #endif

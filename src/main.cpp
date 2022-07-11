@@ -6,7 +6,9 @@
 #include <nlohmann/json.hpp>
 #include <thread>
 
+
 #define DEFAULT_PORT 9600
+
 using json = nlohmann::json;
 
 void startmsg(int port) {
@@ -21,6 +23,7 @@ int main (int argc, char **argv) {
     while (true) {
         Socket fd = acceptor(sock);
         auto buffer  = client::client_handler(fd);
+        std::cout << "track recieved" << std::endl;
         /*
         thread_manager.emplace_back(new std::thread(looper_main, std::move(buffer)));    
         if (thread_manager.size() > 5) {

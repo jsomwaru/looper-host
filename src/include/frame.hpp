@@ -1,3 +1,6 @@
+#ifndef FRAME_HPP
+#define FRAME_HPP
+
 #include <iostream>
 #include <algorithm>
 #include <vector>
@@ -25,3 +28,4 @@ struct Frame {
     Frame() {}
 };
 
+#endif

@@ -77,7 +77,7 @@ namespace protocol {
         return tmp;
     }
 
-   int upgrade_connection_payload(const std::string &headers) {
+   std::string upgrade_connection_payload(const std::string &headers) {
         headerdict parsed_headers = protocol::parse_headers(headers);
         std::string sentkey(parsed_headers["Sec-WebSocket-Key"]);
         std::string acceptkey = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
@@ -86,7 +86,7 @@ namespace protocol {
                                 "Upgrade: websocket\r\n" 
                                 "Connection: upgrade\r\n";
         upgrade.append("Sec-WebSocket-Accept: " + socketkey + "\r\n\r\n");
-        return upgrade
+        return upgrade;
     }
 
     headerdict parse_headers(const std::string &rawheaders) {

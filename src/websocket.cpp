@@ -28,35 +28,48 @@ WebSocket WebSocket::websocket_accept() {
     return WebSocket(newfd, addr);
 }
 
-vector<uint8_t> WebSocket::socket_read(size_t chunk = 2048) {
+vector<uint8_t> WebSocket::socket_read(size_t bytes, size_t chunk = 2048) {
     size_t chunk_size = chunk;
     int read_len;
     int offset = 0;
     vector<uint8_t> data(chunk_size);
     while((read_len = read(_fd, &(data.begin()+offset), chunk_size) != 0)) {
         offset += read_len;
+        if (offset >= bytes) 
+            break;
         data.resize(data.size()+chunk_size);
     }
     data.shrink_to_fit();
     return data;
 }
 
-vector<uint8_t> WebSocket::websocket_read() {
+vector<uint8_t> WebSocket::websocket_read(size_t bytes = 0) {
     if (!_upgraded && !upgrade_connection()) {
         websocket_close();
         websocket_runtime_exception("Could not upgrade connection");
     }
-    vector<uint8_t> data = socket_read(FRAME_SIZE);
-    Frame f = get_frame_parameters(data);
+    Frame f;
+    vector<uint8_t> data;
+    while(f.fin == 0) {
+        vector<uint8_t> fr = socket_read(FRAME_SIZE);
+        f = get_frame_parameters(fr);
+        vector<uint8_t> chunk = socket_read(f.len);
+        data.insert(data.end(), chunk.begin(), chunk.end());
+        if(bytes != 0 && data.size() >= bytes) {
+            data.resize(bytes);
+            break;
+        }
+    }
+    return data;
 }
 
-size_t WebSocket::upgrade_connection() {
+int WebSocket::upgrade_connection() {
     vector<uint8_t> data = socket_read();
     std::string rawheaders(data.begin(), data.end());
     std::string payload = protocol::upgrade_connection_payload(rawheaders);
     size_t sent = socket_send((void*)payload.c_str());
     _upgraded = true;
-    return sent;
+    return (int)sent;
 }
 
 size_t WebSocket::socket_send(void *buf) {
@@ -65,7 +78,12 @@ size_t WebSocket::socket_send(void *buf) {
     return send(_fd, payload, len, 0);
 }
 
-Frame WebSocket::get_frame_parameters(const vector<uint8_t> &buf) {
-    Frame a = protocol::decode_frame_buffer(buf);
-    return a;
+int WebSocket::websocket_close() {
+    close(_fd);
 }
+
+Frame WebSocket::get_frame_parameters(const vector<uint8_t> &buf) {
+    Frame f = protocol::decode_frame_buffer(buf);
+    return f;
+}
+

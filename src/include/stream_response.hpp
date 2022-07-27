@@ -45,9 +45,6 @@ public:
         } 
         return response;
     }
-    int close_websocket() {
-        
-    }
 private:
     Socket fd;
 };

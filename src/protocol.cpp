@@ -183,33 +183,4 @@ namespace protocol {
         std::copy(raw.begin(), raw.end(), std::back_inserter(frame));
         return frame;
     }
-
-    template <typename T, typename A>
-    Frame decode_frame_buffer(const vector<T,A> &buf) {
-        uint8_t mask = 0x80;
-        uint8_t optmask = 0x0f;
-        uint8_t FIN = ((buf[0] & mask) >> 7);
-        uint8_t OPT = (buf[0] & optmask);
-        uint8_t MASKBIT = ((buf[1] & mask) >> 7);
-        uint8_t ini_length = (buf[1] & 127);
-        uint8_t offset = 0;
-        uint64_t length;
-        if(ini_length == 126) {
-            length = (buf[2] << 8) | buf[3];
-            offset = 4;
-        } else if (ini_length == 127) {
-            length = (buf[2] << 8) | buf[3];
-            length = (length << 8) | buf[4];
-            length = (length << 8) | buf[5];
-            length = (length << 8) | buf[6];
-            length = (length << 8) | buf[7];
-            length = (length << 8) | buf[8];
-            offset = 9;
-        } else 
-            offset = 2;
-        uint8_t MASK[4];
-        std::copy(&buf[offset], &buf[offset+4], MASK);
-        return Frame(FIN, length, MASK);
-    }
-
 };

@@ -21,7 +21,7 @@ struct SocketAddress {
          printf("New connection  ip is : %s , port : %d\n" , inet_ntoa(address_.sin_addr) , ntohs(address_.sin_port));
     }
     SocketAddress(const SocketAddress&);
-    inline const int addrlen() { return sizeof(address_); }
+    inline const size_t addrlen() { return sizeof(address_); }
     SocketAddress& operator=(const SocketAddress&);
     sockaddr_in address_;
 };

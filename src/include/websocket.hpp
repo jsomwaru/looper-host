@@ -7,8 +7,10 @@
 #include <exception>
 #include <string>
 #include "protocol.hpp"
-#include "socket.hpp"
 #include "frame.hpp"
+#include "websocket_codec.hpp"
+
+// Move all socket_xxx methods to socket class and use as base class
 
 using std::vector;
 
@@ -19,11 +21,14 @@ public:
     WebSocket(int fd, SocketAddress addr): _fd(fd), _addr(addr) {}
     int websocket_listen(int);
     WebSocket websocket_accept();
-    vector<uint8_t> websocket_read(size_t);
-    vector<uint8_t> socket_read(size_t, size_t);
-    size_t socket_send(void*);
     int websocket_close();
+    WebSocketCodec websocket_read(size_t bytes=0);
     inline int fd() const { return _fd; }
+    
+    // Refactor to socket class
+    template <typename T>
+    size_t socket_send(const T *buf, size_t size);
+    vector<uint8_t> socket_read(size_t bytes=0, size_t chunk=2048);
 private:
     int _fd;
     SocketAddress _addr;

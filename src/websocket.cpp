@@ -6,9 +6,13 @@ void websocket_runtime_exception(const char *msg) {
 
 // Contructors
 WebSocket::WebSocket() {
+    int opt = 1;
     if ((_fd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
         websocket_runtime_exception("error allocating socket");
     }
+    std::cerr << "socket " << _fd << std::endl;
+    if(setsockopt(_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt)) == -1)
+        websocket_runtime_exception("error allocating socket");
 }
 
 // Methods
@@ -25,6 +29,7 @@ int WebSocket::websocket_listen(const int port) {
 WebSocket WebSocket::websocket_accept() {
     SocketAddress addr;
     int newfd = accept(_fd, (sockaddr*)&addr.address_, (socklen_t*)addr.addrlen());
+    std::cerr << newfd << ' ' << std::endl;
     return WebSocket(newfd, addr);
 }
 

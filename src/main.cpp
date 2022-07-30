@@ -36,10 +36,18 @@ int main (int argc, char **argv) {
     vector<ClientConnection> thread_manager;
     
     WebSocket sock = WebSocket();
-    sock.websocket_listen(DEFAULT_PORT);
+    int listening = sock.websocket_listen(DEFAULT_PORT);
+    if (listening == -1) {
+        std::cerr << "error lisetning\n";
+        exit(1);
+    }
+    std::cerr << listening << std::endl;
     startmsg(DEFAULT_PORT);
     while (true) {
         WebSocket conn = sock.websocket_accept();
+        if (!conn.valid()) {
+            exit(1);
+        }
         std::cerr << "client connected\n";
         std::promise<bool> done;
         std::thread *th = new std::thread([&conn, &done] {

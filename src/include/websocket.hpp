@@ -24,6 +24,7 @@ public:
     int websocket_close();
     WebSocketCodec websocket_read(size_t bytes=0);
     inline int fd() const { return _fd; }
+    inline bool valid() const { return _fd != -1; }
     
     // Refactor to socket class
     template <typename T>

@@ -12,6 +12,7 @@ WebSocket::WebSocket() {
     }
     if(setsockopt(_fd, SOL_SOCKET, SO_REUSEADDR,  &opt, sizeof(opt)) == -1)
         websocket_runtime_exception("error allocating socket");
+    assert(_fd > 0);
 }
 
 // Methods
@@ -37,7 +38,9 @@ vector<uint8_t> WebSocket::socket_read(size_t bytes, size_t chunk) {
     int read_len;
     int offset = 0;
     std::vector<uint8_t> data(chunk);
-    while((read_len = read(_fd, data.data()+offset, chunk) != 0)) {
+    char buf[chunk];
+    while(true) {
+        read_len = read(_fd, buf+offset, chunk);
         std::cout << "bytes " << bytes << " chunk " << chunk << " read " << read_len << std::endl;
         offset += read_len;
         if (bytes != 0 && offset >= bytes)

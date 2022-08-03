@@ -13,7 +13,9 @@ using std::vector;
 namespace client {
     
     json client_handler(WebSocket &sock) {
+        std::cout << "client handler" << std::endl;
         WebSocketCodec buf = sock.websocket_read();
+        std::cout << "read buffer\n"; 
         return json();
     }
 };

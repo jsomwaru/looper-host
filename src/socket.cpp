@@ -65,7 +65,7 @@ SocketAddress::SocketAddress(const SocketAddress& rhs) {
 }   
 
 int Socket::bind_() {
-    return bind(handle_, (sockaddr*)&port_.address_, port_.addrlen()); 
+    return bind(handle_, (sockaddr*)&port_.address_,  port_.addrlen()); 
 }
 
 int Socket::listen_() {

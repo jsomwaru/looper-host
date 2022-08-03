@@ -8,7 +8,7 @@
 
 using std::vector;
 using std::array;
-const size_t FRAME_SIZE = 128;
+const size_t FRAME_SIZE = 32;
 
 struct Frame {
 public:
@@ -17,7 +17,7 @@ public:
     array<uint8_t, 4> mask;
     vector<uint8_t> payload;
 
-    Frame() {}
+    Frame(): fin(0), len(0), payload(vector<uint8_t>()) {}
 
     Frame(
         uint8_t finbit, 
@@ -31,6 +31,8 @@ public:
         len = buf.size();
         payload = buf;
     }
+
+    void set_payload(const vector<uint8_t> &buf) { payload = buf; }
     
     vector<uint8_t> websocket_payload(uint8_t finish, uint8_t opt) {
         size_t header_size = 0;
@@ -51,6 +53,12 @@ public:
         std::copy(payload.begin(), 
             payload.end(), std::back_inserter(ws_payload));
         return ws_payload;
+    }
+
+    friend std::ostream& operator<<(std::ostream& out , const Frame& f){
+         out << "Length: " << f.len  << '\n'
+    << "Finish: " << f.fin << '\n';
+    return out;
     }
 
 private:
@@ -78,5 +86,11 @@ private:
             length.insert(length.end(),tmp_length, tmp_length + length_size);
     }
 };
+
+// std::ostream& operator<<(std::ostream& out, const Frame& f) {
+//     out << "Length: " << f.len  << '\n'
+//     << "Finish: " << f.fin << '\n';
+//     return out;
+// }
 
 #endif

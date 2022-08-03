@@ -41,15 +41,18 @@ int main (int argc, char **argv) {
         std::cerr << "error lisetning\n";
         exit(1);
     }
-    std::cerr << listening << std::endl;
     startmsg(DEFAULT_PORT);
     while (true) {
         WebSocket conn = sock.websocket_accept();
         if (!conn.valid()) {
+            std::cerr << "invalid socket\n";
             exit(1);
         }
         std::cerr << "client connected\n";
+        client::client_handler(conn);
+        /*
         std::promise<bool> done;
+
         std::thread *th = new std::thread([&conn, &done] {
             client::client_handler(conn);
             done.set_value(true);
@@ -58,7 +61,10 @@ int main (int argc, char **argv) {
 
         std::remove_if(thread_manager.begin(),
             thread_manager.end(), [] (ClientConnection &cli) {
-                auto fut = cli.get_thread_status();
+                bool fut = cli.get_thread_status();
+                if(fut == false) {
+                    std::cout << "thread getting cleaned" << std::endl;
+                }
                 if (fut) {
                     cli.cleanup();
                     return true;
@@ -66,6 +72,7 @@ int main (int argc, char **argv) {
                 return false;
             }
         );
+        */
     } 
     return 0;
 }

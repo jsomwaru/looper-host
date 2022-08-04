@@ -35,15 +35,15 @@ WebSocket WebSocket::websocket_accept() {
 }
 
 vector<uint8_t> WebSocket::socket_read(size_t bytes, size_t chunk) {
+    /* When bytes is 0 the whole payload is attemplted to be read */
     int read_len;
     int offset = 0;
     std::vector<uint8_t> data(chunk);
-    char buf[chunk];
     while(true) {
-        read_len = read(_fd, buf+offset, chunk);
+        read_len = read(_fd, data.data()+offset, chunk);
         std::cout << "bytes " << bytes << " chunk " << chunk << " read " << read_len << std::endl;
         offset += read_len;
-        if (bytes != 0 && offset >= bytes)
+        if ((bytes != 0 && offset >= bytes) || (read_len < chunk))
             break;
         data.resize(offset+chunk);
     }
@@ -78,12 +78,15 @@ WebSocketCodec WebSocket::websocket_read(size_t bytes) {
 }
 
 int WebSocket::upgrade_connection() {
-    vector<uint8_t> data = socket_read(4096);
-    std::cout << "connection upgrade read"; 
+    vector<uint8_t> data = socket_read(600);
+    std::cout << "connection upgrade read\n"; 
     std::string rawheaders(data.begin(), data.end());
+    std::cerr << rawheaders << std::endl;
     std::string payload = protocol::upgrade_connection_payload(rawheaders);
-    size_t sent = socket_send(payload.c_str(), payload.size()); 
+    std::cerr << payload << std::endl;
+    size_t sent = socket_send(payload.c_str(), payload.size());
     _upgraded = sent > 0 ? true : false;
+    assert(_upgraded == true);
     return (int)sent;
 }
 

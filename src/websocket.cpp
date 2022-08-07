@@ -34,17 +34,19 @@ WebSocket WebSocket::websocket_accept() {
     return WebSocket(newfd, addr);
 }
 
-vector<uint8_t> WebSocket::socket_read(const size_t bytes, const size_t chunk) {
+vector<uint8_t> WebSocket::socket_read(const size_t bytes, size_t chunk) {
     /* When bytes is 0 the whole payload is attemplted to be read */
-    int read_len;
+    int read_len = 0;
     int offset = 0;
+    if (bytes < chunk)
+        chunk = bytes;
     std::vector<uint8_t> data(chunk);
     while(true) {
         read_len = read(_fd, data.data()+offset, chunk);
         std::cout << "bytes " << bytes << " chunk " << chunk << " read " << read_len << std::endl;
-        offset += read_len;
-        if ((bytes != 0 && offset >= bytes) || (read_len < chunk))
+        if (read_len >= bytes || read_len <= chunk) 
             break;
+        offset += read_len;
         data.resize(offset+chunk);
     }
     data.shrink_to_fit();
@@ -57,23 +59,16 @@ WebSocketCodec WebSocket::websocket_read(size_t bytes) {
         websocket_close();
         websocket_runtime_exception("Could not upgrade connection");
     }
-    Frame f;
-    vector<uint8_t> data;
+    uint8_t fin = 0;
     WebSocketCodec frames;
-    while(f.fin == 0) {
+    while(fin == 0) {
         vector<uint8_t> fr = socket_read(FRAME_SIZE);
         std::cout << "read frame size" << std::endl;
-        f = get_frame_parameters(fr);
-        std::cout << f;
-        break;
+        Frame f = get_frame_parameters(fr);
         vector<uint8_t> chunk = socket_read(f.len);
-        // decode payload w mask
-        data.insert(data.end(), chunk.begin(), chunk.end());
-        if(bytes != 0 && data.size() >= bytes) {
-            data.resize(bytes);
-            break;
-        }
+        f.set_payload(chunk);
         frames.append_frame(f);
+        fin = f.fin;
     }
     return frames;
 }

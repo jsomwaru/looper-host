@@ -51,7 +51,7 @@ namespace protocol {
         std::cout << "ini_len " << unsigned(ini_length) << std::endl;
         uint8_t MASK[4];
         std::copy(&buf[offset], &buf[offset+4], MASK);
-        return Frame(FIN, length, MASK);
+        return Frame(FIN, length, MASK, MASKBIT, OPT);
     }
 };
 

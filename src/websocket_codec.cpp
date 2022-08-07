@@ -32,7 +32,7 @@ void WebSocketCodec::encode(const vector<uint8_t> &buf) {
 vector<uint8_t> WebSocketCodec::get_websocket_payload() {
     vector<uint8_t> payload;
     for (auto &frame: frames) {
-        auto buf = frame.websocket_payload(0, 0x2);
+        auto buf = frame.websocket_payload();
         payload.insert(payload.end(), buf.begin(), buf.end());
     }
     return payload;

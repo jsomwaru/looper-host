@@ -8,11 +8,12 @@
 
 using std::vector;
 using std::array;
-const size_t FRAME_SIZE = 32;
+const size_t FRAME_SIZE = 16;
 
-
+// TODO
+// Use this in frame
 struct payload_length {
-    enum class PAYLOAD_SIZE{LARGE, MID, SMALL} size;
+    enum class PAYLOAD_SIZE {LARGE, MID, SMALL} size;
     union {
         uint64_t large_payload;
         uint16_t mid_payload;
@@ -20,21 +21,51 @@ struct payload_length {
     };
 };
 
+struct FrameHeader {
+public:
+    uint8_t fin;
+    payload_length len;
+    uint8_t opt;
+    uint8_t masked;
+
+    FrameHeader(): fin(0), 
+                   len({}), 
+                   opt(0),
+                   masked(0) {}
+
+    FrameHeader(uint8_t _fin, 
+                payload_length _len, 
+                uint8_t _opt,
+                uint8_t _masked): fin(_fin), 
+                                  len(_len), 
+                                  opt(_opt), 
+                                  masked(_masked) {}
+};
+
 struct Frame {
 public:
     uint8_t fin;
     size_t len;
+    uint8_t opt;
+    uint8_t masked;
     array<uint8_t, 4> mask;
     vector<uint8_t> payload;
 
-    Frame(): fin(0), len(0), payload(vector<uint8_t>()) {}
+    Frame():fin(0), 
+            len(0), 
+            opt(0),
+            masked(0),
+            payload(vector<uint8_t>()) {}
 
     Frame(
         uint8_t finbit, 
         size_t _length, 
-        uint8_t _mask[4]): fin(finbit), len(_length) { 
-            std::copy(_mask, _mask+4, std::begin(mask)); 
-    }
+        uint8_t _mask[4],
+        uint8_t _masked,
+        uint8_t _opt): fin(finbit), 
+                       len(_length), 
+                       opt(_opt), 
+                       masked(_masked) { std::copy(_mask, _mask+4, std::begin(mask)); }
 
     Frame(const vector<uint8_t> &buf) {
         fin = 0;
@@ -44,12 +75,12 @@ public:
 
     void set_payload(const vector<uint8_t> &buf) { payload = buf; }
     
-    vector<uint8_t> websocket_payload(uint8_t finish, uint8_t opt) {
+    vector<uint8_t> websocket_payload() {
         size_t header_size = 0;
         vector<uint8_t> length;
         set_length(length);
         vector<uint8_t> ws_payload(payload.size() + header_size);
-        ws_payload[0] |= ((finish << 7) & 0x80); // set fin
+        ws_payload[0] |= ((fin << 7) & 0x80); // set fin
         ws_payload[0] |= (opt & 0xf); // set opt 
         ws_payload[1] |= (0 & 0xf); // set mask to 0
         uint8_t rsv = 0;

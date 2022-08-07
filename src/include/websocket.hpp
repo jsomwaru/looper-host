@@ -29,7 +29,7 @@ public:
     // Refactor to socket class
     template <typename T>
     size_t socket_send(const T *buf, size_t size);
-    vector<uint8_t> socket_read(size_t bytes=0, size_t chunk=2048);
+    vector<uint8_t> socket_read(const size_t bytes=0, const size_t chunk=2048);
 private:
     int _fd;
     SocketAddress _addr;

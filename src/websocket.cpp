@@ -34,7 +34,7 @@ WebSocket WebSocket::websocket_accept() {
     return WebSocket(newfd, addr);
 }
 
-vector<uint8_t> WebSocket::socket_read(size_t bytes, size_t chunk) {
+vector<uint8_t> WebSocket::socket_read(const size_t bytes, const size_t chunk) {
     /* When bytes is 0 the whole payload is attemplted to be read */
     int read_len;
     int offset = 0;
@@ -65,6 +65,7 @@ WebSocketCodec WebSocket::websocket_read(size_t bytes) {
         std::cout << "read frame size" << std::endl;
         f = get_frame_parameters(fr);
         std::cout << f;
+        break;
         vector<uint8_t> chunk = socket_read(f.len);
         // decode payload w mask
         data.insert(data.end(), chunk.begin(), chunk.end());
@@ -81,9 +82,7 @@ int WebSocket::upgrade_connection() {
     vector<uint8_t> data = socket_read(600);
     std::cout << "connection upgrade read\n"; 
     std::string rawheaders(data.begin(), data.end());
-    std::cerr << rawheaders << std::endl;
     std::string payload = protocol::upgrade_connection_payload(rawheaders);
-    std::cerr << payload << std::endl;
     size_t sent = socket_send(payload.c_str(), payload.size());
     _upgraded = sent > 0 ? true : false;
     assert(_upgraded == true);

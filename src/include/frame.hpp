@@ -10,6 +10,16 @@ using std::vector;
 using std::array;
 const size_t FRAME_SIZE = 32;
 
+
+struct payload_length {
+    enum class PAYLOAD_SIZE{LARGE, MID, SMALL} size;
+    union {
+        uint64_t large_payload;
+        uint16_t mid_payload;
+        uint8_t small_payload;
+    };
+};
+
 struct Frame {
 public:
     uint8_t fin;
@@ -55,10 +65,10 @@ public:
         return ws_payload;
     }
 
-    friend std::ostream& operator<<(std::ostream& out , const Frame& f){
+    friend std::ostream& operator<<(std::ostream& out , const Frame& f) {
          out << "Length: " << f.len  << '\n'
-    << "Finish: " << f.fin << '\n';
-    return out;
+             << "Finish: " << unsigned(f.fin) << '\n';
+         return out;
     }
 
 private:
@@ -86,11 +96,5 @@ private:
             length.insert(length.end(),tmp_length, tmp_length + length_size);
     }
 };
-
-// std::ostream& operator<<(std::ostream& out, const Frame& f) {
-//     out << "Length: " << f.len  << '\n'
-//     << "Finish: " << f.fin << '\n';
-//     return out;
-// }
 
 #endif

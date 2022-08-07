@@ -34,14 +34,21 @@ namespace protocol {
         uint8_t ini_length = (buf[1] & 127);
         uint8_t offset = 0;
         uint64_t length = 0;
+        payload_length pl;
         if(ini_length == 126) {
             length = (buf[2] << 8) | buf[3];
             offset = 4;
         } else if (ini_length == 127) {
-            memcpy(&length, &buf[2], sizeof(uint64_t));
+            for(int i = 0; i < 8; ++i) {
+                length = (length << 8) | buf[i+2];
+            }
             offset = 9;
-        } else 
+            std::cout << length << std::endl;
+        } else {
+            length = ini_length;
             offset = 2;
+        }
+        std::cout << "ini_len " << unsigned(ini_length) << std::endl;
         uint8_t MASK[4];
         std::copy(&buf[offset], &buf[offset+4], MASK);
         return Frame(FIN, length, MASK);

@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <iostream>
+#include <poll.h>
 
 using std::ostream; 
 
@@ -20,7 +21,7 @@ struct SocketAddress {
          printf("New connection  ip is : %s , port : %d\n" , inet_ntoa(address_.sin_addr) , ntohs(address_.sin_port));
     }
     SocketAddress(const SocketAddress&);
-    inline const int addrlen() { return sizeof(address_); }
+    inline const size_t addrlen() { return sizeof(address_); }
     SocketAddress& operator=(const SocketAddress&);
     sockaddr_in address_;
 };
@@ -46,6 +47,8 @@ public:
     void close_ () { close(handle_); }
 
     inline char* client_ip() const { return inet_ntoa(port_.address_.sin_addr); }
+
+    pollfd poller();
 
     friend Socket acceptor(Socket&);
     friend Socket mksocket(Socket);

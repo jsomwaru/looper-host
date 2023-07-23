@@ -65,10 +65,10 @@ WebSocketCodec WebSocket::websocket_read(size_t bytes) {
         vector<uint8_t> fr = socket_read(FRAME_SIZE);
         std::cout << "read frame size" << std::endl;
         Frame f = get_frame_parameters(fr);
-        vector<uint8_t> chunk = socket_read(f.len);
+        vector<uint8_t> chunk = socket_read(f.header.len.get_len());
         f.set_payload(chunk);
         frames.append_frame(f);
-        fin = f.fin;
+        fin = f.header.fin;
     }
     return frames;
 }

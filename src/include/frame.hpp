@@ -5,20 +5,46 @@
 #include <algorithm>
 #include <vector>
 #include <array>
+#include <cmath>
 
 using std::vector;
 using std::array;
 const size_t FRAME_SIZE = 16;
 
-// TODO
-// Use this in frame
+
 struct payload_length {
+public:
     enum class PAYLOAD_SIZE {LARGE, MID, SMALL} size;
     union {
         uint64_t large_payload;
         uint16_t mid_payload;
         uint8_t small_payload;
     };
+
+    payload_length(): size(PAYLOAD_SIZE::SMALL), small_payload(0) {}
+
+    payload_length(const size_t len) {
+        if (len <= 125) {
+            size = PAYLOAD_SIZE::SMALL;
+            small_payload = len;
+        } else if (len <= pow(2, 16)) {
+            size = PAYLOAD_SIZE::MID;
+            mid_payload = len;
+        } else {
+            size = PAYLOAD_SIZE::LARGE;
+            large_payload = len;
+        }
+    }
+
+    size_t get_len() const {
+        if (size == PAYLOAD_SIZE::SMALL)
+            return static_cast<size_t>(small_payload);
+        if (size == PAYLOAD_SIZE::MID)
+            return static_cast<size_t>(mid_payload);
+        if (size == PAYLOAD_SIZE::LARGE)
+            return static_cast<size_t>(large_payload);
+        return 0;
+    }
 };
 
 struct FrameHeader {
@@ -44,32 +70,26 @@ public:
 
 struct Frame {
 public:
-    uint8_t fin;
-    size_t len;
-    uint8_t opt;
-    uint8_t masked;
+    FrameHeader header;
     array<uint8_t, 4> mask;
     vector<uint8_t> payload;
 
-    Frame():fin(0), 
-            len(0), 
-            opt(0),
-            masked(0),
-            payload(vector<uint8_t>()) {}
+    Frame(): header(FrameHeader()),
+             payload(vector<uint8_t>()),
+             mask(array<uint8_t, 4>()) {}
 
     Frame(
         uint8_t finbit, 
         size_t _length, 
         uint8_t _mask[4],
         uint8_t _masked,
-        uint8_t _opt): fin(finbit), 
-                       len(_length), 
-                       opt(_opt), 
-                       masked(_masked) { std::copy(_mask, _mask+4, std::begin(mask)); }
+        uint8_t _opt )  { 
+            payload_length payload_len(_length);
+            header = FrameHeader(finbit, payload_len, _opt, _masked);
+            std::copy(_mask, _mask+4, std::begin(mask)); 
+        }
 
     Frame(const vector<uint8_t> &buf) {
-        fin = 0;
-        len = buf.size();
         payload = buf;
     }
 
@@ -80,8 +100,8 @@ public:
         vector<uint8_t> length;
         set_length(length);
         vector<uint8_t> ws_payload(payload.size() + header_size);
-        ws_payload[0] |= ((fin << 7) & 0x80); // set fin
-        ws_payload[0] |= (opt & 0xf); // set opt 
+        ws_payload[0] |= ((header.fin << 7) & 0x80); // set fin
+        ws_payload[0] |= (header.opt & 0xf); // set opt 
         ws_payload[1] |= (0 & 0xf); // set mask to 0
         uint8_t rsv = 0;
         // Reasons I hate the websocket protocol
@@ -97,8 +117,8 @@ public:
     }
 
     friend std::ostream& operator<<(std::ostream& out , const Frame& f) {
-         out << "Length: " << f.len  << '\n'
-             << "Finish: " << unsigned(f.fin) << '\n';
+         out << "Length: " << f.header.len.get_len()  << '\n'
+             << "Finish: " << unsigned(f.header.fin) << '\n';
          return out;
     }
 

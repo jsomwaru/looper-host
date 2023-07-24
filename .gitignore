@@ -7,3 +7,4 @@ cmake_install.cmake
 .vscode
 build/
 looper-host.code-workspace
+looper/a.out

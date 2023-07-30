@@ -24,6 +24,10 @@ void panic(const char *message) {
 int process(jack_nframes_t nframes, void *arg) {
     jack_nframes_t start = jack_frames_since_cycle_start(client);
     jack_time_t sample_time = jack_frames_to_time(client, channel.size());
+    jack_time_t last_time = jack_last_frame_time(client);
+    static jack_time_t cycle_time = 0;
+    std::cout << "last_time " << last_time << std::endl;
+    std::cout << "start_frame " << start << std::endl;
     float *data = (float*)jack_port_get_buffer(input, nframes);
     if (recording) {
         channel.insert(channel.end(), data, data+nframes);

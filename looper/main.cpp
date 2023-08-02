@@ -13,7 +13,7 @@
 using std::vector;
 using std::thread;
 
-static bool recording = true;
+static bool recording = false;
 
 static vector<float> channel;
 
@@ -74,12 +74,9 @@ int process(jack_nframes_t nframes, void *arg) {
     // std::cout << "current_time " << current_time << std::endl;
     float *data = (float*)jack_port_get_buffer(input, nframes);
     if (recording) {
+        std::cout << "recording\n";
         channel.insert(channel.end(), data, data+nframes);
-        if (channel.size() >= 256*6) {
-            recording = false;
-            std::cerr << "recording stopped\n";
-        }
-    } else {
+    } else if (channel.size() >= nframes) {
         if (cycle_time >= channel.size())
             cycle_time = 0;
         float *buffer = (float*)jack_port_get_buffer(output, nframes);

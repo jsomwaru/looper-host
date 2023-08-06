@@ -4,11 +4,13 @@
 #include <vector>
 #include <algorithm>
 #include <thread>
-#include <string>
+#include <string.h>
 #include <termios.h>
 #include <signal.h>
 #include <stdio.h>
+#include "graphics.hpp"
 
+#define DEFAULT_CHANNELS 4
 
 using std::vector;
 using std::thread;
@@ -16,6 +18,48 @@ using std::thread;
 static bool recording = false;
 
 static vector<float> channel;
+
+struct Channel { 
+public:
+    bool recording;
+    bool recorded;
+    vector<float> buffer;
+    jack_port_t *output_port;
+    jack_nframes_t frame_offset;
+
+    static jack_port_t *input;
+
+    inline Channel() {}
+    inline Channel(jack_port_t *_output_port) {
+        output_port = _output_port;
+    }
+    // ~Channel() {
+    //     jack_free(output_port);
+    // }
+    // Channel(const Channel& rhs) {
+    //     this->recording = rhs.recording;
+    //     this->recorded = rhs.recorded;
+    //     this->frame_offset = rhs.frame_offset;
+    //     memcpy(this->output_port, rhs.output_port, sizeof(rhs.output_port));
+    // }
+    // Channel& operator=(Channel rhs) {
+    //     if (this != &rhs) {
+    //         this->recording = rhs.recording;
+    //         this->recorded = rhs.recorded;
+    //         this->frame_offset = rhs.frame_offset;
+    //         memcpy(this->output_port, rhs.output_port, sizeof(rhs.output_port));
+    //     }
+    //     return *this;
+    // }
+    inline void clear() { buffer.clear(); }
+    inline void copy_to_output(float *arg, jack_nframes_t nframes, jack_nframes_t cycle_time) {
+        float *phys_output = (float*)jack_port_get_buffer(output_port, nframes);
+        std:copy(buffer.begin()+cycle_time , buffer.begin()+nframes+cycle_time, phys_output);
+    }
+    inline jack_nframes_t write_channel(float *input_buffer, jack_nframes_t nframes, jack_nframes_t offset) {
+        return nframes;
+    }   
+}; 
 
 
 struct termios old_tio;
@@ -34,6 +78,7 @@ void jack_shutdown(int sig) {
     std::cout << "exiting" << std::endl;
     jack_client_close(client);
     tcsetattr(STDIN_FILENO,TCSANOW,&old_tio);
+    cleanup_display();
     exit(0);
 }
 
@@ -44,13 +89,14 @@ void configure_terminal() {
     new_tio=old_tio;
     /* disable canonical mode (buffered i/o) and local echo */
     new_tio.c_lflag &=(~ICANON & ~ECHO);
-    // new_tio.c_lflag &=(~ICANON);
     /* set the new settings immediately */
     tcsetattr(STDIN_FILENO, TCSANOW, &new_tio);
+    setup_display();
 }
 
 int get_user_input() {
     while (1) {
+        display_recording(recording);
         unsigned char a = getchar();
         if (a == ' ') {
             recording = !recording;
@@ -60,21 +106,11 @@ int get_user_input() {
 }
 
 int process(jack_nframes_t nframes, void *arg) {
-    jack_nframes_t start = jack_frames_since_cycle_start(client);
-    jack_time_t sample_time = jack_frames_to_time(client, channel.size());
-    jack_time_t frame_time = jack_frames_to_time(client, nframes);
-    jack_time_t last_time = jack_last_frame_time(client);
+    vector<Channel> *channels = static_cast<vector<Channel>*>(arg);
     jack_time_t current_time = jack_get_time();
     static jack_time_t cycle_time = 0;
-    // std::cout << "last_time " << last_time << std::endl;
-    // std::cout << "start_frame " << start << std::endl;
-    // std::cout << "frames " << nframes << std::endl;
-    // std::cout << "sample_time " << sample_time << std::endl;
-    // std::cout << "frame_time " << frame_time << std::endl;
-    // std::cout << "current_time " << current_time << std::endl;
     float *data = (float*)jack_port_get_buffer(input, nframes);
     if (recording) {
-        std::cout << "recording\n";
         channel.insert(channel.end(), data, data+nframes);
     } else if (channel.size() >= nframes) {
         if (cycle_time >= channel.size())
@@ -94,6 +130,7 @@ int main() {
     const char *server_name = nullptr;
     jack_options_t options = JackNullOption;
     jack_status_t status;
+
     client = jack_client_open(client_name, options,&status, server_name);
     input = jack_port_register(
         client, "input", JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
@@ -102,7 +139,9 @@ int main() {
     live_output = jack_port_register(
         client, "live_output", JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
 
-    if(jack_set_process_callback(client, process, 0))
+    vector<Channel> channel_rack(DEFAULT_CHANNELS, Channel(output));
+
+    if(jack_set_process_callback(client, process, &channel_rack))
         panic("Could not set callback");
     
     int active = jack_activate(client);
@@ -147,6 +186,7 @@ int main() {
 
 	jack_client_close(client);
     io_thread.join();
+    jack_free(input);
     jack_free(capture_ports);
     jack_free(playback_ports);
     return 0;

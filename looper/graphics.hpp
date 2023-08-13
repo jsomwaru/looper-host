@@ -2,6 +2,7 @@
 #define GRAPHICS_HPP
 
 #include <ncurses.h>
+#include <string.h>
 
 
 static bool inited = false;
@@ -17,6 +18,9 @@ void display_recording(bool recording) {
     if (recording) {
         clear();
         printw("Recording\n");
+        // char channel_status[18];
+        // std::sprintf(channel_status, "Active Channel %d", channel_count);
+        // printw(channel_status);
     }
     else {
         clear();

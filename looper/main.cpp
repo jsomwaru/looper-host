@@ -123,9 +123,7 @@ int main() {
     live_output = jack_port_register(
         client, "live_output", JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
 
-    vector<Channel> channel_rack(DEFAULT_CHANNELS, Channel(client));
-
-    ChannelRack master = ChannelRack(client, channel_rack);
+    ChannelRack master(client, DEFAULT_CHANNELS);
 
     if(jack_set_process_callback(client, process_channels, &master))
         panic("Could not set callback");
@@ -133,6 +131,8 @@ int main() {
     int active = jack_activate(client);
     if (active != 0)
         panic("Can not activate client");
+
+    master.connect(client);
 
     thread io_thread(get_user_input, std::ref(master));
     configure_terminal();
@@ -160,6 +160,9 @@ int main() {
         panic("Could not connect output port");
     }
 
+    jack_free(capture_ports);
+    jack_free(playback_ports);
+
     signal(SIGINT, jack_shutdown);
     
     while (1) {
@@ -172,8 +175,6 @@ int main() {
 
 	jack_client_close(client);
     io_thread.join();
-    jack_free(input);
-    jack_free(capture_ports);
-    jack_free(playback_ports);
+
     return 0;
 }

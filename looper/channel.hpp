@@ -29,8 +29,8 @@ public:
     inline Channel(jack_client_t *client) {
         char port_name[PORT_NAME_LEN];
         std::sprintf(port_name, "output%d", channel_count++);
-        output_port = jack_port_register(
-            client, port_name, JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
+        std::cout << port_name << std::endl;
+        output_port = jack_port_register(client, port_name, JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
         buffer = vector<float>();
         frame_offset = 0;
         recording = false;
@@ -70,17 +70,14 @@ struct ChannelRack {
 
     static channel_count_t active_channel;  
 
-    inline ChannelRack(jack_client_t *client, vector<Channel> &_rack) {
+    inline ChannelRack(vector<Channel> &_rack) {
         rack = _rack;
-        const char **playback_ports = jack_get_ports(
-            client, NULL, NULL, JackPortIsPhysical|JackPortIsInput);
-        for (auto &channel : rack) {
-            int ret = jack_connect(client, jack_port_name(channel.output_port), playback_ports[0]);
-            if (ret != 0) {
-                std::cerr << "Could not connect to output port";
-            }
+    }
+
+    inline ChannelRack(jack_client_t *client, channel_count_t num_channels) {
+        for (int i = 0; i < num_channels; ++i) {
+            rack.emplace_back(client);
         }
-        jack_free(playback_ports);
     }
 
     inline int get_longest_channel() {
@@ -116,6 +113,19 @@ struct ChannelRack {
     inline void increment_active_channel() {
         if (active_channel < rack.size()-1) 
             ++active_channel;
+    }
+
+    inline void connect(jack_client_t *client) {
+        const char **playback_ports = jack_get_ports(
+            client, NULL, NULL, JackPortIsPhysical|JackPortIsInput);
+        for (auto &channel : rack) {
+            int ret = jack_connect(client, jack_port_name(channel.output_port), playback_ports[0]);
+            if (ret != 0) {
+                std::cerr << "Could not connect to output port\n";
+            }
+            std::cerr << "Could connect to output port\n";
+        }
+        jack_free(playback_ports);
     }
 
 };

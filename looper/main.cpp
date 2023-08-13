@@ -9,6 +9,7 @@
 #include <signal.h>
 #include <stdio.h>
 #include "graphics.hpp"
+#include "channel.hpp"
 
 #define DEFAULT_CHANNELS 4
 
@@ -18,49 +19,6 @@ using std::thread;
 static bool recording = false;
 
 static vector<float> channel;
-
-struct Channel { 
-public:
-    bool recording;
-    bool recorded;
-    vector<float> buffer;
-    jack_port_t *output_port;
-    jack_nframes_t frame_offset;
-
-    static jack_port_t *input;
-
-    inline Channel() {}
-    inline Channel(jack_port_t *_output_port) {
-        output_port = _output_port;
-    }
-    // ~Channel() {
-    //     jack_free(output_port);
-    // }
-    // Channel(const Channel& rhs) {
-    //     this->recording = rhs.recording;
-    //     this->recorded = rhs.recorded;
-    //     this->frame_offset = rhs.frame_offset;
-    //     memcpy(this->output_port, rhs.output_port, sizeof(rhs.output_port));
-    // }
-    // Channel& operator=(Channel rhs) {
-    //     if (this != &rhs) {
-    //         this->recording = rhs.recording;
-    //         this->recorded = rhs.recorded;
-    //         this->frame_offset = rhs.frame_offset;
-    //         memcpy(this->output_port, rhs.output_port, sizeof(rhs.output_port));
-    //     }
-    //     return *this;
-    // }
-    inline void clear() { buffer.clear(); }
-    inline void copy_to_output(float *arg, jack_nframes_t nframes, jack_nframes_t cycle_time) {
-        float *phys_output = (float*)jack_port_get_buffer(output_port, nframes);
-        std:copy(buffer.begin()+cycle_time , buffer.begin()+nframes+cycle_time, phys_output);
-    }
-    inline jack_nframes_t write_channel(float *input_buffer, jack_nframes_t nframes, jack_nframes_t offset) {
-        return nframes;
-    }   
-}; 
-
 
 struct termios old_tio;
 
@@ -94,15 +52,41 @@ void configure_terminal() {
     setup_display();
 }
 
-int get_user_input() {
+int get_user_input(ChannelRack &master) {
     while (1) {
-        display_recording(recording);
-        unsigned char a = getchar();
-        if (a == ' ') {
-            recording = !recording;
+        display_recording(master.get_active_channel().recording);
+        unsigned char c = getchar();
+        if (c == ' ') {
+            master.get_active_channel().recording = !master.get_active_channel().recording;
+        } else if (c == 'b') {
+            master.decrement_active_channel();
+        } else if (c == 'n') {
+            master.increment_active_channel();
         }
     }
     std::cout << "thread exit" << std::endl;
+}
+
+int process_channels(jack_nframes_t nframes, void *arg) { 
+    ChannelRack *channels = static_cast<ChannelRack*>(arg);
+    jack_time_t current_time = jack_get_time();
+    static jack_time_t cycle_time = 0;
+    float *data = (float*)jack_port_get_buffer(input, nframes);    
+    int idx = channels->get_longest_channel();
+    if (channels->get_active_channel().recording) {
+        channels->get_active_channel().write_channel(data, nframes, cycle_time);
+    } else if (idx != -1) {
+        for (int i = 0; i < DEFAULT_CHANNELS; ++i) {
+            if ((*channels)[i].recorded) {
+                (*channels)[i].copy_to_output(nframes, cycle_time);
+            }
+        }
+        if (cycle_time >= (*channels)[idx].get_total_frame_count()) 
+            cycle_time = 0;
+    }
+    float *buffer =  (float*)jack_port_get_buffer(live_output, nframes);
+    std::copy(data, data+nframes, buffer);
+    return 0;
 }
 
 int process(jack_nframes_t nframes, void *arg) {
@@ -139,16 +123,18 @@ int main() {
     live_output = jack_port_register(
         client, "live_output", JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
 
-    vector<Channel> channel_rack(DEFAULT_CHANNELS, Channel(output));
+    vector<Channel> channel_rack(DEFAULT_CHANNELS, Channel(client));
 
-    if(jack_set_process_callback(client, process, &channel_rack))
+    ChannelRack master = ChannelRack(client, channel_rack);
+
+    if(jack_set_process_callback(client, process_channels, &master))
         panic("Could not set callback");
     
     int active = jack_activate(client);
     if (active != 0)
         panic("Can not activate client");
 
-    thread io_thread(get_user_input);
+    thread io_thread(get_user_input, std::ref(master));
     configure_terminal();
 
     const char **capture_ports = jack_get_ports(

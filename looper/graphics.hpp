@@ -1,3 +1,6 @@
+#ifndef GRAPHICS_HPP
+#define GRAPHICS_HPP
+
 #include <ncurses.h>
 
 
@@ -13,11 +16,11 @@ void display_recording(bool recording) {
         setup_display();
     if (recording) {
         clear();
-        printw("Recording ⏺\n");
+        printw("Recording\n");
     }
     else {
         clear();
-        printw("Not Recording ⏺\n");
+        printw("Not Recording\n");
     }
     refresh();
 }
@@ -25,3 +28,5 @@ void display_recording(bool recording) {
 void cleanup_display() {
     endwin();
 }
+
+#endif

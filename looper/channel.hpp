@@ -1,8 +1,18 @@
+#ifndef CHANNEL_HPP
+#define CHANNEL_HPP
+
 #include <jack/jack.h>
 #include <string.h>
 #include <vector>
+#include <iostream>
+#include <algorithm>
+#include <mutex>
 
 using std::vector;
+
+typedef unsigned short int channel_count_t;
+
+#define PORT_NAME_LEN 8
 
 struct Channel { 
 public:
@@ -12,36 +22,104 @@ public:
     jack_port_t *output_port;
     jack_nframes_t frame_offset;
 
+    static channel_count_t channel_count;
     static jack_port_t *input;
 
     inline Channel() {}
-    inline Channel(jack_port_t *_output_port) {
-        output_port = _output_port;
+    inline Channel(jack_client_t *client) {
+        char port_name[PORT_NAME_LEN];
+        std::sprintf(port_name, "output%d", channel_count++);
+        output_port = jack_port_register(
+            client, port_name, JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
+        buffer = vector<float>();
+        frame_offset = 0;
+        recording = false;
+        recorded = false;
     }
-    ~Channel() {
-        jack_free(output_port);
-    }
-    Channel(const Channel& rhs) {
-        this->recording = rhs.recording;
-        this->recorded = rhs.recorded;
-        this->frame_offset = rhs.frame_offset;
-        memcpy(this->output_port, rhs.output_port, sizeof(rhs.output_port));
-    }
-    Channel& operator=(Channel rhs) {
-        if (this != &rhs) {
-            this->recording = rhs.recording;
-            this->recorded = rhs.recorded;
-            this->frame_offset = rhs.frame_offset;
-            memcpy(this->output_port, rhs.output_port, sizeof(rhs.output_port));
-        }
-        return *this;
-    }
+    
     inline void clear() { buffer.clear(); }
-    inline void copy_to_output(float *arg, jack_nframes_t nframes, jack_nframes_t cycle_time) {
+    
+    inline void copy_to_output(jack_nframes_t nframes, jack_nframes_t cycle_time) {
         float *phys_output = (float*)jack_port_get_buffer(output_port, nframes);
         std:copy(buffer.begin()+cycle_time , buffer.begin()+nframes+cycle_time, phys_output);
     }
+    
     inline jack_nframes_t write_channel(float *input_buffer, jack_nframes_t nframes, jack_nframes_t offset) {
-        
+        frame_offset = offset;
+        // process silence
+        buffer.insert(buffer.end(), offset, 0.0);
+        // write sound
+        buffer.insert(buffer.end(), input_buffer, input_buffer+nframes);
+        return nframes;
+    }
+
+    inline jack_nframes_t get_total_frame_count() {
+        return frame_offset + buffer.size();
+    }
+
+    inline bool get_recording() {
+        return recording;
     }
 }; 
+
+channel_count_t Channel::channel_count = 0;
+
+struct ChannelRack {
+    vector<Channel> rack;
+    jack_port_t *master_output;
+
+    static channel_count_t active_channel;  
+
+    inline ChannelRack(jack_client_t *client, vector<Channel> &_rack) {
+        rack = _rack;
+        const char **playback_ports = jack_get_ports(
+            client, NULL, NULL, JackPortIsPhysical|JackPortIsInput);
+        for (auto &channel : rack) {
+            int ret = jack_connect(client, jack_port_name(channel.output_port), playback_ports[0]);
+            if (ret != 0) {
+                std::cerr << "Could not connect to output port";
+            }
+        }
+        jack_free(playback_ports);
+    }
+
+    inline int get_longest_channel() {
+        auto elm = std::max_element(rack.begin(), rack.end(), [](Channel&a, Channel&b) {
+            return a.get_total_frame_count() < b.get_total_frame_count();
+        });
+        return elm->get_total_frame_count() > 0 ? std::distance(rack.begin(), elm) : -1;
+    }
+
+    inline void schedule() {
+        int idx = get_longest_channel();
+        jack_nframes_t max_length = rack[idx].get_total_frame_count();
+        for (int i = 0; i < rack.size(); ++i) {
+            
+        }
+    }
+
+    inline Channel& operator[](int index) {
+        if (index < 0 || index > rack.size()) 
+            throw std::out_of_range ("Indexed ChannelRack out of range");
+        return rack[index];
+    }
+
+    inline Channel& get_active_channel() {
+        return rack[ChannelRack::active_channel];
+    }
+
+    inline void decrement_active_channel() {
+        if (active_channel != 0) 
+            --active_channel;
+    }
+
+    inline void increment_active_channel() {
+        if (active_channel < rack.size()-1) 
+            ++active_channel;
+    }
+
+};
+
+channel_count_t ChannelRack::active_channel = 0;
+
+#endif

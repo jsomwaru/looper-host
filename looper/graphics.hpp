@@ -62,6 +62,8 @@ int get_user_input(ChannelRack &master) {
         display_recording(master.get_active_channel().recording, ChannelRack::active_channel);
         unsigned char c = getchar();
         if (c == ' ') {
+            if (master.get_active_channel().recorded && !master.get_active_channel().recording)
+                master.get_active_channel().clear();
             master.get_active_channel().recording = !master.get_active_channel().recording;
         } else if (c == 'b') {
             if (master.get_active_channel().recording)

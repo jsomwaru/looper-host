@@ -36,21 +36,21 @@ int process_channels(jack_nframes_t nframes, void *arg) {
     ChannelRack *channels = static_cast<ChannelRack*>(arg);
     static jack_nframes_t cycle_time = 0;
     float *data = (float*)jack_port_get_buffer(input, nframes);    
-    int idx = channels->get_longest_channel();
+    int max_idx = channels->get_longest_channel();
     Channel &active_channel = channels->get_active_channel();
-    if (channels->get_active_channel().recording) {
-        if (!channels->get_active_channel().recorded) {
-            channels->get_active_channel().recorded = true;
-            channels->get_active_channel().frame_offset = cycle_time;
+    if (active_channel.recording) {
+        if (!active_channel.recorded) {
+            active_channel.recorded = true;
+            active_channel.frame_offset = cycle_time;
         }
-        channels->get_active_channel().write_channel(data, nframes);
-    } else if (idx != -1) {
+        active_channel.write_channel(data, nframes);
+    } else if (max_idx != -1) {
         channels->schedule(nframes, cycle_time);
         cycle_time += nframes;
-        if (cycle_time >= (*channels)[idx].get_total_frame_count()) 
+        if (cycle_time >= (*channels)[max_idx].get_total_frame_count()) 
             cycle_time = 0;
     }
-    float *buffer =  (float*)jack_port_get_buffer(live_output, nframes);
+    float *buffer = (float*)jack_port_get_buffer(live_output, nframes);
     std::copy(data, data+nframes, buffer);
     return 0;
 }

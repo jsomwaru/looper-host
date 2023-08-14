@@ -42,6 +42,11 @@ public:
         float *out = (float*)jack_port_get_buffer(output_port, nframes);
         std:copy(buffer.begin()+cycle_time , buffer.begin()+nframes+cycle_time, out);
     }
+
+    inline void process_silence(jack_nframes_t nframes) {
+        float *out = (float*)jack_port_get_buffer(output_port, nframes);
+        std::fill(out, out+nframes, 0);
+    }
     
     inline jack_nframes_t write_channel(float *input_buffer, jack_nframes_t nframes) {
         // write sound
@@ -58,12 +63,8 @@ public:
     }
 }; 
 
-channel_count_t Channel::channel_count = 0;
-
 struct ChannelRack {
     vector<Channel> rack;
-    jack_port_t *master_output;
-
     static channel_count_t active_channel;  
 
     inline ChannelRack(vector<Channel> &_rack) {
@@ -83,11 +84,16 @@ struct ChannelRack {
         return elm->get_total_frame_count() > 0 ? std::distance(rack.begin(), elm) : -1;
     }
 
-    inline void schedule() {
-        int idx = get_longest_channel();
-        jack_nframes_t max_length = rack[idx].get_total_frame_count();
+    inline void schedule(jack_nframes_t nframes, jack_nframes_t cycle_time) {
         for (int i = 0; i < rack.size(); ++i) {
-            
+            if (rack[i].recorded) {
+                if (
+                    cycle_time > rack[i].frame_offset && cycle_time < rack[i].get_total_frame_count()
+                )
+                    rack[i].copy_to_output(nframes, cycle_time);
+                else
+                    rack[i].process_silence(nframes);
+            }
         }
     }
 
@@ -119,13 +125,13 @@ struct ChannelRack {
             if (ret != 0) {
                 std::cerr << "Could not connect to output port\n";
             }
-            std::cerr << "Could connect to output port\n";
         }
         jack_free(playback_ports);
     }
 
 };
 
+channel_count_t Channel::channel_count = 0;
 channel_count_t ChannelRack::active_channel = 0;
 
 #endif

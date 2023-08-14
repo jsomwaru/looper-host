@@ -1,11 +1,8 @@
 #include <jack/jack.h>
 #include <iostream>
 #include <unistd.h>
-#include <vector>
-#include <algorithm>
 #include <thread>
 #include <string.h>
-#include <termios.h>
 #include <signal.h>
 #include <stdio.h>
 #include "graphics.hpp"
@@ -17,8 +14,6 @@ using std::vector;
 using std::thread;
 
 static bool recording = false;
-
-struct termios old_tio;
 
 jack_port_t *input;
 jack_port_t *live_output;
@@ -32,40 +27,9 @@ void panic(const char *message) {
 void jack_shutdown(int sig) {
     std::cout << "exiting" << std::endl;
     jack_client_close(client);
-    tcsetattr(STDIN_FILENO,TCSANOW,&old_tio);
+    tcsetattr(STDIN_FILENO,TCSANOW, &old_tio);
     cleanup_display();
     exit(0);
-}
-
-void configure_terminal() {
-    struct termios new_tio;
-    tcgetattr(STDIN_FILENO, &old_tio);
-    /* we want to keep the old setting to restore them a the end */
-    new_tio=old_tio;
-    /* disable canonical mode (buffered i/o) and local echo */
-    new_tio.c_lflag &=(~ICANON & ~ECHO);
-    /* set the new settings immediately */
-    tcsetattr(STDIN_FILENO, TCSANOW, &new_tio);
-    setup_display();
-}
-
-int get_user_input(ChannelRack &master) {
-    while (1) {
-        display_recording(master.get_active_channel().recording, ChannelRack::active_channel);
-        unsigned char c = getchar();
-        if (c == ' ') {
-            master.get_active_channel().recording = !master.get_active_channel().recording;
-        } else if (c == 'b') {
-            if (master.get_active_channel().recording)
-                master.get_active_channel().recording = false;
-            master.decrement_active_channel();
-        } else if (c == 'n') {
-            if (master.get_active_channel().recording)
-                master.get_active_channel().recording = false;
-            master.increment_active_channel();
-        }
-    }
-    return 0;
 }
 
 int process_channels(jack_nframes_t nframes, void *arg) { 
@@ -81,11 +45,7 @@ int process_channels(jack_nframes_t nframes, void *arg) {
         }
         channels->get_active_channel().write_channel(data, nframes);
     } else if (idx != -1) {
-        for (int i = 0; i < DEFAULT_CHANNELS; ++i) {
-            if ((*channels)[i].recorded && !(*channels)[i].recording) {
-                (*channels)[i].copy_to_output(nframes, cycle_time);
-            }
-        }
+        channels->schedule(nframes, cycle_time);
         cycle_time += nframes;
         if (cycle_time >= (*channels)[idx].get_total_frame_count()) 
             cycle_time = 0;

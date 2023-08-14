@@ -13,8 +13,6 @@
 using std::vector;
 using std::thread;
 
-static bool recording = false;
-
 jack_port_t *input;
 jack_port_t *live_output;
 jack_client_t *client;
@@ -44,7 +42,8 @@ int process_channels(jack_nframes_t nframes, void *arg) {
             active_channel.frame_offset = cycle_time;
         }
         active_channel.write_channel(data, nframes);
-    } else if (max_idx != -1) {
+    } 
+    if (max_idx != -1 && (*channels)[max_idx].get_total_frame_count() >= nframes) {
         channels->schedule(nframes, cycle_time);
         cycle_time += nframes;
         if (cycle_time >= (*channels)[max_idx].get_total_frame_count()) 

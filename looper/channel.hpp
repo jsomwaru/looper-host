@@ -86,7 +86,7 @@ struct ChannelRack {
 
     inline void schedule(jack_nframes_t nframes, jack_nframes_t cycle_time) {
         for (int i = 0; i < rack.size(); ++i) {
-            if (rack[i].recorded) {
+            if (rack[i].recorded && !rack[i].recording) {
                 if (
                     cycle_time > rack[i].frame_offset && cycle_time < rack[i].get_total_frame_count()
                 )

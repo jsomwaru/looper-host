@@ -29,7 +29,6 @@ public:
     inline Channel(jack_client_t *client) {
         char port_name[PORT_NAME_LEN];
         std::sprintf(port_name, "output%d", channel_count++);
-        std::cout << port_name << std::endl;
         output_port = jack_port_register(client, port_name, JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
         buffer = vector<float>();
         frame_offset = 0;
@@ -40,14 +39,11 @@ public:
     inline void clear() { buffer.clear(); }
     
     inline void copy_to_output(jack_nframes_t nframes, jack_nframes_t cycle_time) {
-        float *phys_output = (float*)jack_port_get_buffer(output_port, nframes);
-        std:copy(buffer.begin()+cycle_time , buffer.begin()+nframes+cycle_time, phys_output);
+        float *out = (float*)jack_port_get_buffer(output_port, nframes);
+        std:copy(buffer.begin()+cycle_time , buffer.begin()+nframes+cycle_time, out);
     }
     
-    inline jack_nframes_t write_channel(float *input_buffer, jack_nframes_t nframes, jack_nframes_t offset) {
-        frame_offset = offset;
-        // process silence
-        buffer.insert(buffer.end(), offset, 0.0);
+    inline jack_nframes_t write_channel(float *input_buffer, jack_nframes_t nframes) {
         // write sound
         buffer.insert(buffer.end(), input_buffer, input_buffer+nframes);
         return nframes;

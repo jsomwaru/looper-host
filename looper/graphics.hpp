@@ -12,20 +12,21 @@ void setup_display() {
     inited = true;
 }
 
-void display_recording(bool recording) {
+void display_recording(bool recording, int active_channel) {
     if(!inited)
         setup_display();
     if (recording) {
         clear();
         printw("Recording\n");
-        // char channel_status[18];
-        // std::sprintf(channel_status, "Active Channel %d", channel_count);
-        // printw(channel_status);
+
     }
     else {
         clear();
         printw("Not Recording\n");
     }
+    char channel_status[18];
+    std::sprintf(channel_status, "Active Channel %d", active_channel);
+    printw(channel_status);
     refresh();
 }
 

@@ -35,32 +35,67 @@ public:
         recording = false;
         recorded = false;
     }
+
+    inline Channel(const Channel& rhs) {
+        if (this != &rhs) {
+            std::unique_lock<std::mutex> guard(lock);
+            std::unique_lock<std::mutex> rguard(rhs.lock);
+            output_port = rhs.output_port;
+            buffer = rhs.buffer;
+            frame_offset = rhs.frame_offset;
+            recording = rhs.recording;
+            recorded = rhs.recorded;
+        }
+    }
+
+    inline Channel& operator=(const Channel& rhs) {
+         if (this != &rhs) {
+            std::unique_lock<std::mutex> guard(lock);
+            std::unique_lock<std::mutex> rguard(rhs.lock);
+            output_port = rhs.output_port;
+            buffer = rhs.buffer;
+            frame_offset = rhs.frame_offset;
+            recording = rhs.recording;
+            recorded = rhs.recorded;
+        }
+        return *this;
+    }
     
-    inline void clear() { buffer.clear(); }
+    inline void clear() { 
+        std::lock_guard<std::mutex> guard(lock);
+        buffer.clear(); 
+    }
     
     inline void copy_to_output(jack_nframes_t nframes, jack_nframes_t cycle_time) {
+        std::lock_guard<std::mutex> guard(lock);
         float *out = (float*)jack_port_get_buffer(output_port, nframes);
         std:copy(buffer.begin()+cycle_time , buffer.begin()+nframes+cycle_time, out);
     }
 
     inline void process_silence(jack_nframes_t nframes) {
+        std::lock_guard<std::mutex> guard(lock);
         float *out = (float*)jack_port_get_buffer(output_port, nframes);
         std::fill(out, out+nframes, 0);
     }
     
     inline jack_nframes_t write_channel(float *input_buffer, jack_nframes_t nframes) {
         // write sound
+        std::lock_guard<std::mutex> guard(lock);
         buffer.insert(buffer.end(), input_buffer, input_buffer+nframes);
         return nframes;
     }
 
     inline jack_nframes_t get_total_frame_count() {
+        std::lock_guard<std::mutex> guard(lock);
         return frame_offset + buffer.size();
     }
 
     inline bool get_recording() {
         return recording;
     }
+
+private:
+    mutable std::mutex lock;
 }; 
 
 struct ChannelRack {
@@ -128,7 +163,6 @@ struct ChannelRack {
         }
         jack_free(playback_ports);
     }
-
 };
 
 channel_count_t Channel::channel_count = 0;

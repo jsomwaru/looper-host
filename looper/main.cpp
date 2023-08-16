@@ -34,7 +34,6 @@ int process_channels(jack_nframes_t nframes, void *arg) {
     ChannelRack *channels = static_cast<ChannelRack*>(arg);
     static jack_nframes_t cycle_time = 0;
     float *data = (float*)jack_port_get_buffer(input, nframes);    
-    int max_idx = channels->get_longest_channel();
     Channel &active_channel = channels->get_active_channel();
     if (active_channel.recording) {
         if (!active_channel.recorded) {
@@ -42,7 +41,8 @@ int process_channels(jack_nframes_t nframes, void *arg) {
             active_channel.frame_offset = cycle_time;
         }
         active_channel.write_channel(data, nframes);
-    } 
+    }
+    int max_idx = channels->get_longest_channel();
     if (max_idx != -1 && (*channels)[max_idx].get_total_frame_count() >= nframes) {
         channels->schedule(nframes, cycle_time);
         cycle_time += nframes;

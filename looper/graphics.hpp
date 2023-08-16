@@ -59,7 +59,7 @@ void configure_terminal() {
 
 int get_user_input(ChannelRack &master) {
     while (1) {
-        display_recording(master.get_active_channel().recording, ChannelRack::active_channel);
+        display_recording(master.get_active_channel().recording, master.active_channel);
         unsigned char c = getchar();
         if (c == ' ') {
             if (master.get_active_channel().recorded && !master.get_active_channel().recording)

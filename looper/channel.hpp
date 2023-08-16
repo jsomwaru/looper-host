@@ -63,13 +63,18 @@ public:
     
     inline void clear() { 
         std::lock_guard<std::mutex> guard(lock);
+        frame_offset = 0;
         buffer.clear(); 
     }
     
     inline void copy_to_output(jack_nframes_t nframes, jack_nframes_t cycle_time) {
         std::lock_guard<std::mutex> guard(lock);
         float *out = (float*)jack_port_get_buffer(output_port, nframes);
-        std:copy(buffer.begin()+cycle_time , buffer.begin()+nframes+cycle_time, out);
+        std:copy(
+            buffer.begin()+cycle_time-frame_offset, 
+            buffer.begin()+nframes+cycle_time-frame_offset, 
+            out
+        );
     }
 
     inline void process_silence(jack_nframes_t nframes) {
@@ -100,11 +105,10 @@ private:
 
 struct ChannelRack {
     vector<Channel> rack;
-    static channel_count_t active_channel;  
+    channel_count_t active_channel;  
 
-    inline ChannelRack(vector<Channel> &_rack) {
-        rack = _rack;
-    }
+    inline ChannelRack(vector<Channel> &_rack) : 
+        active_channel(0), rack(_rack) { }
 
     inline ChannelRack(jack_client_t *client, channel_count_t num_channels) {
         for (int i = 0; i < num_channels; ++i) {
@@ -113,6 +117,8 @@ struct ChannelRack {
     }
 
     inline int get_longest_channel() {
+        // vector<Channel> tmprack;
+        // std::copy_if(rack.begin(), rack.end(), std::back_inserter(tmprack), [](Channel &c) { return !c.recording; });
         auto elm = std::max_element(rack.begin(), rack.end(), [](Channel&a, Channel&b) {
             return a.get_total_frame_count() < b.get_total_frame_count();
         });
@@ -123,7 +129,8 @@ struct ChannelRack {
         for (int i = 0; i < rack.size(); ++i) {
             if (rack[i].recorded && !rack[i].recording) {
                 if (
-                    cycle_time > rack[i].frame_offset && cycle_time < rack[i].get_total_frame_count()
+                    cycle_time >= rack[i].frame_offset && 
+                    (cycle_time + nframes) <= rack[i].get_total_frame_count()
                 )
                     rack[i].copy_to_output(nframes, cycle_time);
                 else
@@ -139,7 +146,7 @@ struct ChannelRack {
     }
 
     inline Channel& get_active_channel() {
-        return rack[ChannelRack::active_channel];
+        return rack[active_channel];
     }
 
     inline void decrement_active_channel() {
@@ -166,6 +173,5 @@ struct ChannelRack {
 };
 
 channel_count_t Channel::channel_count = 0;
-channel_count_t ChannelRack::active_channel = 0;
 
 #endif

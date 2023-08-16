@@ -1,6 +1,5 @@
 # Looper Host
-Setup:
-`cmake .`
 
 Build:
+`cd looper`
 `make`

@@ -29,6 +29,11 @@ vector<jack_port_t*> output_ports(2, nullptr);
 
 #define TABLE_SIZE   (200)
 
+
+static bool RECORDING = false;
+
+
+
 static void signal_handler(int sig)
 {
 	jack_client_close(jc);
@@ -63,6 +68,14 @@ int process_file(jack_nframes_t nframes, void * arg) {
  */
 void jack_shutdown (void *arg) { 
 	exit (1);
+}
+
+
+static void start(int signal) {
+    if(RECORDING == true) {
+        RECORDING = false
+    }
+    
 }
 
 int looper_main (json buffer) {
@@ -165,7 +178,7 @@ int looper_main (json buffer) {
 #else
 	signal(SIGQUIT, signal_handler);
 	signal(SIGTERM, signal_handler);
-	signal(SIGHUP, signal_handler);
+	signal(SIGHUP, start);
 	signal(SIGINT, signal_handler);
 #endif
 

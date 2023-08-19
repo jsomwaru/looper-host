@@ -64,6 +64,7 @@ int get_user_input(ChannelRack &master) {
             if (master.get_active_channel().recorded && !master.get_active_channel().recording) {
                 // need to stop recording before clearing 
                 master.get_active_channel().recording = !master.get_active_channel().recording;
+                master.get_active_channel().recorded = false;
                 master.get_active_channel().clear();
             }
             master.get_active_channel().recording = !master.get_active_channel().recording;

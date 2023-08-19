@@ -106,9 +106,10 @@ private:
 struct ChannelRack {
     vector<Channel> rack;
     channel_count_t active_channel;  
+    bool paused;
 
     inline ChannelRack(vector<Channel> &_rack) : 
-        active_channel(0), rack(_rack) { }
+        active_channel(0), rack(_rack), paused(false) { }
 
     inline ChannelRack(jack_client_t *client, channel_count_t num_channels) {
         for (int i = 0; i < num_channels; ++i) {
@@ -170,6 +171,7 @@ struct ChannelRack {
         }
         jack_free(playback_ports);
     }
+    inline void play_pause() { paused = !paused; }
 };
 
 channel_count_t Channel::channel_count = 0;

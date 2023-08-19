@@ -43,7 +43,7 @@ int process_channels(jack_nframes_t nframes, void *arg) {
         active_channel.write_channel(data, nframes);
     }
     int max_idx = channels->get_longest_channel();
-    if (max_idx != -1 && (*channels)[max_idx].get_total_frame_count() >= nframes) {
+    if (max_idx != -1 && (*channels)[max_idx].get_total_frame_count() >= nframes && !channels->paused) {
         channels->schedule(nframes, cycle_time);
         cycle_time += nframes;
         if (cycle_time >= (*channels)[max_idx].get_total_frame_count()) 

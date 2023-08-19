@@ -19,7 +19,7 @@ void setup_display() {
     inited = true;
 }
 
-void display_recording(bool recording, int active_channel) {
+void display_recording(bool recording, bool recorded, bool paused, int active_channel) {
     if(!inited)
         setup_display();
     if (recording) {
@@ -33,11 +33,10 @@ void display_recording(bool recording, int active_channel) {
         attron(COLOR_PAIR(2));
         printw("Not Recording\n");
         attroff(COLOR_PAIR(2));
-
     }
-    char channel_status[18];
-    std::sprintf(channel_status, "Active Channel %d", active_channel);
-    printw(channel_status);
+    printw("Recorded: %s\n", recorded ? "True" : "False");
+    printw("Paused: %s\n", paused ? "True" : "False");
+    printw("Active Channel %d\n", active_channel);
     refresh();
 }
 
@@ -59,11 +58,14 @@ void configure_terminal() {
 
 int get_user_input(ChannelRack &master) {
     while (1) {
-        display_recording(master.get_active_channel().recording, master.active_channel);
+        display_recording(master.get_active_channel().recording, master.get_active_channel().recorded, master.paused, master.active_channel);
         unsigned char c = getchar();
         if (c == ' ') {
-            if (master.get_active_channel().recorded && !master.get_active_channel().recording)
+            if (master.get_active_channel().recorded && !master.get_active_channel().recording) {
+                // need to stop recording before clearing 
+                master.get_active_channel().recording = !master.get_active_channel().recording;
                 master.get_active_channel().clear();
+            }
             master.get_active_channel().recording = !master.get_active_channel().recording;
         } else if (c == 'b') {
             if (master.get_active_channel().recording)
@@ -73,6 +75,8 @@ int get_user_input(ChannelRack &master) {
             if (master.get_active_channel().recording)
                 master.get_active_channel().recording = false;
             master.increment_active_channel();
+        } else if (c == 'p') {
+            master.play_pause();
         }
     }
     return 0;

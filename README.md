@@ -1,5 +1,15 @@
 # Looper Host
 
 Build:
-`cd looper`
-`make`
+
+```bash
+cd looper`
+make
+```
+
+Usage:
+
+Record: Space
+Next Channel: n
+Previous Channel: b 
+Play/Pause: p

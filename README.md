@@ -3,7 +3,7 @@
 Build:
 
 ```bash
-cd looper`
+cd looper
 make
 ```
 

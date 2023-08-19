@@ -10,6 +10,9 @@ make
 Usage:
 
 Record: Space
+
 Next Channel: n
+
 Previous Channel: b 
+
 Play/Pause: p

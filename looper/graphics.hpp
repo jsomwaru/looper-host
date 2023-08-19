@@ -4,6 +4,7 @@
 #include <ncurses.h>
 #include <string.h>
 #include <termios.h>
+#include <unistd.h>
 #include "channel.hpp"
 
 

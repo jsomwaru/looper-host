@@ -1,18 +1,20 @@
 # Looper Host
 
-Build:
+## Build:
 
 ```bash
 cd looper
 make
 ```
 
-Usage:
+## Usage:
 
-Record: Space
+* Record: Space
+* Next Channel: n
+* Previous Channel: b 
+* Play/Pause: p
 
-Next Channel: n
+## Requirements:
 
-Previous Channel: b 
-
-Play/Pause: p
+* Jack2
+* ncurses
